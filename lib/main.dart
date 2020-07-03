@@ -7,6 +7,9 @@ import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 import 'package:provider_test/edgepainter.dart';
 import 'package:provider_test/node.dart';
 
+
+enum Mode { addExistingNodeAsChild, removeExistingChild, def   }
+
 void main() {
   runApp(
     /// Providers are above [MyApp] instead of inside it, so that tests
@@ -93,14 +96,14 @@ class AnimatedColorContainer extends StatefulWidget {
 
 class _AnimatedColorContainerState extends State<AnimatedColorContainer>
     with SingleTickerProviderStateMixin {
-  AnimationController controller;
+  AnimationController growAnimationController;
   Animation animation;
 
   @override
   void initState() {
-    controller =
+    growAnimationController =
         AnimationController(vsync: this, duration: Duration(seconds: 1));
-    animation = Tween<double>(begin: 1, end: 1.5).animate(controller);
+    animation = Tween<double>(begin: 1, end: 1.5).animate(growAnimationController);
 
     super.initState();
   }
@@ -114,9 +117,9 @@ class _AnimatedColorContainerState extends State<AnimatedColorContainer>
     }
 
     if (widget.node.active) {
-      controller.repeat(reverse: true);
-    } else if (!controller.isCompleted) {
-      controller.reverse();
+      growAnimationController.repeat(reverse: true);
+    } else if (!growAnimationController.isCompleted) {
+      growAnimationController.reverse();
     }
     return ScaleTransition(
       scale: animation,
@@ -127,10 +130,9 @@ class _AnimatedColorContainerState extends State<AnimatedColorContainer>
                     .read<NodeStates>()
                     .updatePosition(widget.node, details.delta)
               },
-          child: Container( decoration: BoxDecoration(
+          child: NodeBody( 
                 color: widget.node.getColor(),
-                shape: BoxShape.circle,),
-              height: widget.node.size, width: widget.node.size)),
+               height: widget.node.size, width: widget.node.size)),
     );
   }
 }

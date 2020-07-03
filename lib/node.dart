@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 
 class Node {
+  
   final List<Color> colorsToChooseFrom;
   bool active;
   int count = 0;
@@ -92,5 +93,53 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
 
   List<Node> getNodes() {
     return nodes;
+  }
+}
+
+
+class NodeBody extends StatelessWidget {
+  final double height;
+  final double width;
+  final Color color;
+  static const double smallBorderwidth = 3;
+
+  NodeBody({Key key, this.height, this.width, this.color}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(alignment: Alignment.center, children: <Widget>[
+      Container(
+          height: height,
+          width: width,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            border: Border.all(width: smallBorderwidth, color: Colors.brown),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.5),
+                spreadRadius: 5,
+                blurRadius: 7,
+                offset: Offset(5, 5), // changes position of shadow
+              ),
+            ],
+          )),
+      Container(
+          height: height - 2 * smallBorderwidth,
+          width: width - 2 * smallBorderwidth,
+          decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(
+                  width: smallBorderwidth * 2, color: Colors.yellow[300]))),
+      Container(
+        height: height - 4 * smallBorderwidth,
+        width: width - 4 * smallBorderwidth,
+        decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            border: Border.all(width: smallBorderwidth, color: Colors.brown)),
+      )
+    ]);
   }
 }
