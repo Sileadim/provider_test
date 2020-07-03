@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 
+enum Mode { addExistingNodeAsChild, removeExistingConnection, def }
+
 class Node {
-  
   final List<Color> colorsToChooseFrom;
   bool active;
   int count = 0;
@@ -14,16 +15,7 @@ class Node {
   List<Node> children;
   int id = 0;
   Offset position;
-  Function notify;
   double size;
-  void toggle() {
-    active = !active;
-  }
-
-  void deactive() {
-    active = false;
-  }
-
   Node(
       {this.colorsToChooseFrom,
       this.nodes,
@@ -31,14 +23,22 @@ class Node {
       this.id,
       this.children = const [],
       this.position,
-      this.notify,
       this.size = 100});
+
   Color getColor() {
     return colorsToChooseFrom[count % 2];
   }
 
   void increment() {
     count++;
+  }
+
+  void toggle() {
+    active = !active;
+  }
+
+  void deactive() {
+    active = false;
   }
 
   void deactivatedOthers() {
@@ -58,19 +58,21 @@ class Node {
 class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
   List<Node> nodes = [];
   Matrix4 matrix = Matrix4.identity();
+  Node activeNode;
+  Mode mode = Mode.def;
+
   NodeStates() {
     var parent = Node(
-        colorsToChooseFrom: [Colors.green, Colors.red],
-        nodes: nodes,
-        position: Offset(10, 200),
-        notify: notifyListeners);
+      colorsToChooseFrom: [Colors.green, Colors.red],
+      nodes: nodes,
+      position: Offset(10, 200),
+    );
     nodes.add(parent);
 
     nodes.add(Node(
         colorsToChooseFrom: [Colors.yellow, Colors.blue],
         nodes: nodes,
         position: Offset(200, 200),
-        notify: notifyListeners,
         children: [parent]));
   }
 
@@ -94,16 +96,100 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
   List<Node> getNodes() {
     return nodes;
   }
-}
 
+  bool deleteNode(Node node) {
+    if (nodes.length > 1) {
+      nodes.remove(node);
+      return true;
+    }
+    return false;
+  }
+
+  bool isChild(Node parent, Node child) {
+    if (parent.children.contains(child)) {
+      return true;
+    }
+    return false;
+  }
+
+  bool addExistingAsChild(Node node) {
+    if (!isChild(activeNode, node) && activeNode != node) {
+      activeNode.children.add(node);
+      return true;
+    }
+    return false;
+  }
+
+  void addChild(Node node) {
+    Node newNode = Node(
+      colorsToChooseFrom: [Colors.green, Colors.red],
+      nodes: nodes,
+      position: node.position + Offset(0, 200),
+    );
+    nodes.add(newNode);
+    node.children.add(newNode);
+  }
+
+  bool removeConnection(Node node) {
+    if (isChild(activeNode, node)) {
+      activeNode.children.remove(node);
+      return true;
+    } else if (isChild(node, activeNode)) {
+      node.children.remove(activeNode);
+      return true;
+    }
+    return false;
+  }
+
+  void toggleAddChild(Node node) {
+    switch (mode) {
+      case Mode.addExistingNodeAsChild:
+        mode = Mode.def;
+        activeNode = null;
+        break;
+
+      case Mode.removeExistingConnection:
+        mode = Mode.addExistingNodeAsChild;
+        activeNode = node;
+        break;
+
+      case Mode.def:
+        mode = Mode.addExistingNodeAsChild;
+        activeNode = node;
+    }
+    notifyListeners();
+  }
+
+  void toggleRemoveExistingConnection(Node node) {
+    switch (mode) {
+      case Mode.removeExistingConnection:
+        mode = Mode.def;
+        activeNode = null;
+        break;
+
+      case Mode.addExistingNodeAsChild:
+        mode = Mode.removeExistingConnection;
+        activeNode = node;
+        break;
+
+      case Mode.def:
+        mode = Mode.removeExistingConnection;
+        activeNode = node;
+    }
+    notifyListeners();
+  }
+}
 
 class NodeBody extends StatelessWidget {
   final double height;
   final double width;
   final Color color;
+  final IconData iconData;
   static const double smallBorderwidth = 3;
 
-  NodeBody({Key key, this.height, this.width, this.color}) : super(key: key);
+  NodeBody(
+      {Key key, this.height, this.width, this.color, this.iconData = Icons.add})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -133,13 +219,14 @@ class NodeBody extends StatelessWidget {
               border: Border.all(
                   width: smallBorderwidth * 2, color: Colors.yellow[300]))),
       Container(
-        height: height - 4 * smallBorderwidth,
-        width: width - 4 * smallBorderwidth,
-        decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            border: Border.all(width: smallBorderwidth, color: Colors.brown)),
-      )
+          height: height - 4 * smallBorderwidth,
+          width: width - 4 * smallBorderwidth,
+          decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(width: smallBorderwidth, color: Colors.brown)),
+          child:
+              Center(child: Icon(icon: widget.iconData, color: Colors.white)))
     ]);
   }
 }
