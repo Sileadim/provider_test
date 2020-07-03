@@ -178,6 +178,14 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
     }
     notifyListeners();
   }
+
+  void toggleActiveNode (Node node){
+
+    activeNode = activeNode == node ? null:node;
+    notifyListeners();
+
+  }
+
 }
 
 class NodeBody extends StatelessWidget {
@@ -226,7 +234,7 @@ class NodeBody extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(width: smallBorderwidth, color: Colors.brown)),
           child:
-              Center(child: Icon(icon: widget.iconData, color: Colors.white)))
+              Center(child: Icon(iconData, color:Colors.white) ))
     ]);
   }
 }

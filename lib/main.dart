@@ -29,7 +29,8 @@ class MyApp extends StatelessWidget {
   }
 }
 
-List<Widget> layoutElements(Matrix4 matrix, List<Node> nodes) {
+List<Widget> layoutElements(
+    Matrix4 matrix, List<Node> nodes, BuildContext context) {
   List<Widget> layedOutNodes = [];
   for (var node in nodes) {
     Matrix4 newMatrix = matrix.clone()
@@ -37,54 +38,56 @@ List<Widget> layoutElements(Matrix4 matrix, List<Node> nodes) {
     layedOutNodes.add(
       Transform(
         transform: newMatrix,
-        child: AnimatedColorContainer(node: node),
+        child: AnimatedButton(
+            onTap: () => {}, size: node.size, node: node, moveable: true),
       ),
     );
   }
   return layedOutNodes;
 }
 
-List<Widget> layoutButtons(Matrix4 matrix, List<Node> nodes, BuildContext context) {
-  List<Widget> layedOutButtons = [];
-  for (var node in nodes) {
-    Matrix4 newMatrix = matrix.clone()
-      ..translate(node.position.dx, node.position.dy);
-    List<Map> buttonData = [
-      {"color": Colors.green, "icon": Icons.add_circle_outline, context.read<NodeStates>().addChild, false],
-      //[Colors.green, Icons.add_circle, addNewParent, false],
-      //if (children.length < nodes.length - 1)
-      //  [
-      //    Colors.green[200],
-      //    Icons.arrow_forward,
-      //    toggleAddChild,
-      //    activeNodeWrapper?.activeNode == this &&
-      //            activeNodeWrapper?.mode == Mode.addExistingChild
-      //        ? true
-      //        : false
-      //  ],
-      //if (nodes.length > 1)
-      //  [Colors.red, Icons.remove_circle_outline, delete, false],
-      //if (children.length > 0)
-      //  [
-      //    Colors.red[200],
-      //    Icons.remove,
-      //    toggleDeleteChild,
-      //    activeNodeWrapper?.activeNode == this &&
-      //            activeNodeWrapper?.mode == Mode.removeChild
-      //        ? true
-      //        : false
-      //  ],
-      //[Colors.blue, Icons.create, () => {}, false]
-      //;
-    layedOutNodes.add(
-      Transform(
-        transform: newMatrix,
-        child: AnimatedButton(node: node),
-      ),
-    );
-  }
-  return layedOutNodes;
-}
+//List<Widget> layoutButtons(Matrix4 matrix, List<Node> nodes, BuildContext context) {
+//  List<Widget> layedOutButtons = [];
+//  for (var node in nodes) {
+//    Matrix4 newMatrix = matrix.clone()
+//      ..translate(node.position.dx, node.position.dy);
+//    List<Map> buttonData = [
+//      {"color": Colors.green, "icon": Icons.add_circle_outline, "onTap": context.read<NodeStates>().addChild,"active":false, "unrolled":
+//       ],
+//      //[Colors.green, Icons.add_circle, addNewParent, false],
+//      //if (children.length < nodes.length - 1)
+//      //  [
+//      //    Colors.green[200],
+//      //    Icons.arrow_forward,
+//      //    toggleAddChild,
+//      //    activeNodeWrapper?.activeNode == this &&
+//      //            activeNodeWrapper?.mode == Mode.addExistingChild
+//      //        ? true
+//      //        : false
+//      //  ],
+//      //if (nodes.length > 1)
+//      //  [Colors.red, Icons.remove_circle_outline, delete, false],
+//      //if (children.length > 0)
+//      //  [
+//      //    Colors.red[200],
+//      //    Icons.remove,
+//      //    toggleDeleteChild,
+//      //    activeNodeWrapper?.activeNode == this &&
+//      //            activeNodeWrapper?.mode == Mode.removeChild
+//      //        ? true
+//      //        : false
+//      //  ],
+//      //[Colors.blue, Icons.create, () => {}, false]
+//      //;
+//    layedOutButtons.add(
+//      Transform(
+//        transform: newMatrix,
+//        child: AnimatedButton(node: node),
+//      ),
+//    );
+//  }
+//  return layedOutNodes;
+//}
 
 class MyHomePage extends StatelessWidget {
   const MyHomePage({Key key}) : super(key: key);
@@ -117,7 +120,7 @@ class MyHomePage extends StatelessWidget {
                     height: double.infinity,
                     color: Colors.transparent),
               ),
-              ...layoutElements(matrix, nodes)
+              ...layoutElements(matrix, nodes, context)
             ],
           ),
         ),
@@ -142,11 +145,11 @@ Widget applyRotationAndTranslationFromAnimation(
     child: Transform(
         transform:
             Matrix4.rotationZ(getRadiansFromDegree(rotationAnimation.value))
-              ..scale(rotationAnimation.value),
+              ..scale(moveAnimation.value),
         alignment: Alignment.center,
         child: widget),
   );
-} // bu
+}
 
 class AnimatedButton extends StatefulWidget {
   final Node node;
@@ -156,13 +159,13 @@ class AnimatedButton extends StatefulWidget {
   final Function onTap;
   final bool moveable;
   final degreeRotation;
-  final Icon icon;
+  final IconData iconData;
   AnimatedButton(
       {Key key,
       this.node,
       this.size,
       this.onTap,
-      this.icon,
+      this.iconData,
       this.degreeRotation = 0,
       this.active = false,
       this.unrolled = false,
@@ -174,7 +177,7 @@ class AnimatedButton extends StatefulWidget {
 }
 
 class _AnimatedButtonState extends State<AnimatedButton>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   @override
   AnimationController growAnimationController;
   Animation growAnimation;
@@ -189,7 +192,8 @@ class _AnimatedButtonState extends State<AnimatedButton>
     growAnimation =
         Tween<double>(begin: 1, end: 1.4).animate(growAnimationController);
 
-    super.initState();
+    unrollAnimationController =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 230));
     unrollAnimation = TweenSequence([
       TweenSequenceItem<double>(
           tween: Tween<double>(begin: 0.0, end: 1.2), weight: 75.0),
@@ -199,6 +203,8 @@ class _AnimatedButtonState extends State<AnimatedButton>
     rotateAnimation = Tween<double>(begin: 180.0, end: 0.0).animate(
         CurvedAnimation(
             parent: unrollAnimationController, curve: Curves.easeOut));
+
+    super.initState();
   }
 
   @override
@@ -214,8 +220,7 @@ class _AnimatedButtonState extends State<AnimatedButton>
       unrollAnimationController.reverse();
     }
 
-
-    void _onTap(){
+    void _onTap() {
       return widget.onTap(widget.node);
     }
 
@@ -236,7 +241,7 @@ class _AnimatedButtonState extends State<AnimatedButton>
                       }
                   },
               child: NodeBody(
-                  icon: widget.icon,
+                  iconData: widget.iconData,
                   color: widget.node.getColor(),
                   height: widget.node.size,
                   width: widget.node.size)),
