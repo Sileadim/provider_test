@@ -21,9 +21,10 @@ class Node {
       this.nodes,
       this.active = false,
       this.id,
-      this.children = const [],
       this.position,
-      this.size = 100});
+      children,
+      this.size = 100})
+      : children = children ?? [];
 
   Color getColor() {
     return colorsToChooseFrom[count % 2];
@@ -179,10 +180,14 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
     notifyListeners();
   }
 
-  void toggleActiveNode (Node node){
-
-    activeNode = activeNode == node ? null:node;
+  void toggleActiveNode(Node node) {
+    activeNode = activeNode == node ? null : node;
+    print("active node");
+    print(activeNode);
     notifyListeners();
+  }
+  bool isActiveNode(Node node) {
+    return activeNode == node ? true : false;
 
   }
 
@@ -233,8 +238,7 @@ class NodeBody extends StatelessWidget {
               color: color,
               shape: BoxShape.circle,
               border: Border.all(width: smallBorderwidth, color: Colors.brown)),
-          child:
-              Center(child: Icon(iconData, color:Colors.white) ))
+          child: Center(child: Icon(iconData, color: Colors.white)))
     ]);
   }
 }

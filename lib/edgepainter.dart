@@ -59,8 +59,6 @@ class EdgePainter extends CustomPainter {
 
     for (var parent in nodes) {
       for (var child in parent.children) {
-        print(parent);
-        print(child);
         Offset transformedParentPosition = moveCenter(parent);
         Offset transformedChildPosition = moveCenter(child);
 

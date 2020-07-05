@@ -39,55 +39,80 @@ List<Widget> layoutElements(
       Transform(
         transform: newMatrix,
         child: AnimatedButton(
-            onTap: () => {}, size: node.size, node: node, moveable: true),
+            onTap: context.watch<NodeStates>().toggleActiveNode,
+            size: node.size,
+            node: node,
+            offsetLength: 0,
+            active: context.watch<NodeStates>().isActiveNode(node),
+            moveable: true,
+            unrolled: true),
       ),
     );
   }
   return layedOutNodes;
 }
 
-//List<Widget> layoutButtons(Matrix4 matrix, List<Node> nodes, BuildContext context) {
-//  List<Widget> layedOutButtons = [];
-//  for (var node in nodes) {
-//    Matrix4 newMatrix = matrix.clone()
-//      ..translate(node.position.dx, node.position.dy);
-//    List<Map> buttonData = [
-//      {"color": Colors.green, "icon": Icons.add_circle_outline, "onTap": context.read<NodeStates>().addChild,"active":false, "unrolled":
-//       ],
-//      //[Colors.green, Icons.add_circle, addNewParent, false],
-//      //if (children.length < nodes.length - 1)
-//      //  [
-//      //    Colors.green[200],
-//      //    Icons.arrow_forward,
-//      //    toggleAddChild,
-//      //    activeNodeWrapper?.activeNode == this &&
-//      //            activeNodeWrapper?.mode == Mode.addExistingChild
-//      //        ? true
-//      //        : false
-//      //  ],
-//      //if (nodes.length > 1)
-//      //  [Colors.red, Icons.remove_circle_outline, delete, false],
-//      //if (children.length > 0)
-//      //  [
-//      //    Colors.red[200],
-//      //    Icons.remove,
-//      //    toggleDeleteChild,
-//      //    activeNodeWrapper?.activeNode == this &&
-//      //            activeNodeWrapper?.mode == Mode.removeChild
-//      //        ? true
-//      //        : false
-//      //  ],
-//      //[Colors.blue, Icons.create, () => {}, false]
-//      //;
-//    layedOutButtons.add(
-//      Transform(
-//        transform: newMatrix,
-//        child: AnimatedButton(node: node),
-//      ),
-//    );
-//  }
-//  return layedOutNodes;
-//}
+List<Widget> layoutButtons(
+    Matrix4 matrix, List<Node> nodes, BuildContext context) {
+  List<Widget> layedOutButtons = [];
+  for (var node in nodes) {
+    Matrix4 newMatrix = matrix.clone()
+      ..translate(node.position.dx, node.position.dy);
+    List<Map> buttonData = [
+      {
+        "node": node,
+        "color": Colors.green,
+        "icon": Icons.add_circle_outline,
+        "onTap": context.watch<NodeStates>().addChild,
+      }
+    ];
+    //[Colors.green, Icons.add_circle, addNewParent, false],
+    //if (children.length < nodes.length - 1)
+    //  [
+    //    Colors.green[200],
+    //    Icons.arrow_forward,
+    //    toggleAddChild,
+    //    activeNodeWrapper?.activeNode == this &&
+    //            activeNodeWrapper?.mode == Mode.addExistingChild
+    //        ? true
+    //        : false
+    //  ],
+    //if (nodes.length > 1)
+    //  [Colors.red, Icons.remove_circle_outline, delete, false],
+    //if (children.length > 0)
+    //  [
+    //    Colors.red[200],
+    //    Icons.remove,
+    //    toggleDeleteChild,
+    //    activeNodeWrapper?.activeNode == this &&
+    //            activeNodeWrapper?.mode == Mode.removeChild
+    //        ? true
+    //        : false
+    //  ],
+    //[Colors.blue, Icons.create, () => {}, false]
+    //;
+
+    int i = 0;
+    for (var b in buttonData) {
+      layedOutButtons.add(
+        Transform(
+            transform: newMatrix,
+            child: AnimatedButton(
+                onTap: b["onTap"],
+                node: b["node"],
+                color: b["color"],
+                iconData: b["iconData"],
+                size: 70,
+                active: false,
+                unrolled: node.active,
+                offsetLength: 100,
+                degreeRotation: i * 360 / buttonData.length)),
+      );
+      i++;
+    }
+  }
+  return layedOutButtons;
+}
 
 class MyHomePage extends StatelessWidget {
   const MyHomePage({Key key}) : super(key: key);
@@ -113,14 +138,15 @@ class MyHomePage extends StatelessWidget {
                 // Need to fix edgepainter if rotation should be allowed
                 shouldRotate: false,
                 onMatrixUpdate: (m, tm, sm, rm) {
-                  context.read<NodeStates>().updateMatrix(tm, sm, rm);
+                  context.read<NodeStates>().updateMatrix(tm, sm, null);
                 },
                 child: Container(
                     width: double.infinity,
                     height: double.infinity,
                     color: Colors.transparent),
               ),
-              ...layoutElements(matrix, nodes, context)
+              ...layoutElements(matrix, nodes, context),
+              //...layoutButtons(matrix, nodes, context)
             ],
           ),
         ),
@@ -134,23 +160,6 @@ double getRadiansFromDegree(double degree) {
   return degree / unitRadian;
 }
 
-Widget applyRotationAndTranslationFromAnimation(
-    {Widget widget,
-    double degreeRotation,
-    Animation moveAnimation,
-    Animation rotationAnimation}) {
-  return Transform.translate(
-    offset: Offset.fromDirection(
-        getRadiansFromDegree(degreeRotation), moveAnimation.value * 90),
-    child: Transform(
-        transform:
-            Matrix4.rotationZ(getRadiansFromDegree(rotationAnimation.value))
-              ..scale(moveAnimation.value),
-        alignment: Alignment.center,
-        child: widget),
-  );
-}
-
 class AnimatedButton extends StatefulWidget {
   final Node node;
   final double size;
@@ -158,18 +167,23 @@ class AnimatedButton extends StatefulWidget {
   final bool unrolled;
   final Function onTap;
   final bool moveable;
-  final degreeRotation;
+  final double degreeRotation;
   final IconData iconData;
+  final double offsetLength;
+  final Color color;
+
   AnimatedButton(
       {Key key,
       this.node,
       this.size,
       this.onTap,
       this.iconData,
+      this.color,
       this.degreeRotation = 0,
       this.active = false,
       this.unrolled = false,
-      this.moveable = false})
+      this.moveable = false,
+      this.offsetLength = 1})
       : super(key: key);
 
   @override
@@ -181,25 +195,31 @@ class _AnimatedButtonState extends State<AnimatedButton>
   @override
   AnimationController growAnimationController;
   Animation growAnimation;
+  Animation layoutGrowAnimation;
+
   AnimationController unrollAnimationController;
   Animation unrollAnimation;
   Animation rotateAnimation;
-
+  Animation offsetAnimation;
+  Animation initialGrowAnimation;
   @override
   void initState() {
     growAnimationController =
         AnimationController(vsync: this, duration: Duration(seconds: 1));
     growAnimation =
         Tween<double>(begin: 1, end: 1.4).animate(growAnimationController);
-
     unrollAnimationController =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 230));
+        AnimationController(vsync: this, duration: Duration(milliseconds: 1000));
+    initialGrowAnimation =
+        Tween<double>(begin: 0, end: 1).animate(unrollAnimationController);
     unrollAnimation = TweenSequence([
       TweenSequenceItem<double>(
           tween: Tween<double>(begin: 0.0, end: 1.2), weight: 75.0),
       TweenSequenceItem<double>(
           tween: Tween<double>(begin: 1.2, end: 1.0), weight: 25.0),
     ]).animate(unrollAnimationController);
+
+    offsetAnimation = Tween<Offset>(  begin: Offset.zero, end: Offset.fromDirection(getRadiansFromDegree(widget.degreeRotation), widget.offsetLength) ).animate(unrollAnimationController);
     rotateAnimation = Tween<double>(begin: 180.0, end: 0.0).animate(
         CurvedAnimation(
             parent: unrollAnimationController, curve: Curves.easeOut));
@@ -214,6 +234,7 @@ class _AnimatedButtonState extends State<AnimatedButton>
     } else if (!growAnimationController.isCompleted) {
       growAnimationController.reverse();
     }
+
     if (widget.unrolled) {
       unrollAnimationController.forward();
     } else {
@@ -224,74 +245,34 @@ class _AnimatedButtonState extends State<AnimatedButton>
       return widget.onTap(widget.node);
     }
 
-    return applyRotationAndTranslationFromAnimation(
-        degreeRotation: widget.degreeRotation,
-        rotationAnimation: rotateAnimation,
-        moveAnimation: unrollAnimation,
-        widget: ScaleTransition(
-          scale: growAnimation,
-          child: GestureDetector(
-              onTap: () => _onTap(),
-              onPanUpdate: (details) => {
-                    if (widget.moveable)
-                      {
-                        context
-                            .read<NodeStates>()
-                            .updatePosition(widget.node, details.delta)
-                      }
-                  },
-              child: NodeBody(
-                  iconData: widget.iconData,
-                  color: widget.node.getColor(),
-                  height: widget.node.size,
-                  width: widget.node.size)),
-        ));
-  }
-}
+    return 
 
-class AnimatedColorContainer extends StatefulWidget {
-  final Node node;
-  AnimatedColorContainer({Key key, this.node}) : super(key: key);
-  @override
-  _AnimatedColorContainerState createState() => _AnimatedColorContainerState();
-}
-
-class _AnimatedColorContainerState extends State<AnimatedColorContainer>
-    with SingleTickerProviderStateMixin {
-  AnimationController growAnimationController;
-  Animation animation;
-
-  @override
-  void initState() {
-    growAnimationController =
-        AnimationController(vsync: this, duration: Duration(seconds: 1));
-    animation =
-        Tween<double>(begin: 1, end: 1.5).animate(growAnimationController);
-
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    void onTap() {
-      context.read<NodeStates>().incrementAll();
-      widget.node.deactivatedOthers();
-      widget.node.toggle();
-    }
-
-    if (widget.node.active) {
-      growAnimationController.repeat(reverse: true);
-    } else if (!growAnimationController.isCompleted) {
-      growAnimationController.reverse();
-    }
-    return ScaleTransition(
-      scale: animation,
-      child: GestureDetector(
-          onTap: () => onTap(),
-          child: NodeBody(
-              color: widget.node.getColor(),
-              height: widget.node.size,
-              width: widget.node.size)),
-    );
+          SlideTransition(
+              position: offsetAnimation,
+              child: RotationTransition(
+              turns: unrollAnimation,
+              child: ScaleTransition(
+                          scale: initialGrowAnimation,
+                              child: ScaleTransition(
+                  scale: growAnimation,
+                  child: GestureDetector(
+                      onTap: () => _onTap(),
+                      onPanUpdate: (details) => {
+                            if (widget.moveable)
+                              {
+                                context
+                                    .read<NodeStates>()
+                                    .updatePosition(widget.node, details.delta)
+                              }
+                          },
+                      child: NodeBody(
+                          iconData: widget.iconData,
+                          color: widget.color ?? widget.node.getColor(),
+                          height: widget.node.size,
+                          width: widget.node.size)),
+                ),
+              ),
+      ),
+          );
   }
 }
