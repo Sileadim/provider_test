@@ -130,8 +130,6 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   @override
   void initState() {
-    // TODO: implement initState
-    print("--------------------------Init home");
     super.initState();
   }
 
@@ -139,7 +137,6 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    //print("********************");
     return Scaffold(
         appBar: AppBar(
           title: const Text('Example'),
@@ -224,9 +221,7 @@ class _AnimatedButtonState extends State<AnimatedButton>
 
   @override
   void initState() {
-    String type = widget.color != null ? "button" : "node";
-    print("Init $type");
-
+    //String type = widget.color != null ? "button" : "node";
     growAnimationController =
         AnimationController(vsync: this, duration: Duration(seconds: 1));
     growAnimation =

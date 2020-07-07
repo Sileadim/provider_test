@@ -70,7 +70,6 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
       position: Offset(10, 200),
     );
     nodes.add(parent);
-
     nodes.add(Node(
         colorsToChooseFrom: [Colors.yellow, Colors.blue],
         nodes: nodes,
