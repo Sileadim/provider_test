@@ -16,6 +16,7 @@ class Node {
   int id = 0;
   Offset position;
   double size;
+
   Node(
       {this.colorsToChooseFrom,
       this.nodes,
@@ -94,6 +95,10 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
     notifyListeners();
   }
 
+  void notify(Node node) {
+    notifyListeners();
+  }
+
   List<Node> getNodes() {
     return nodes;
   }
@@ -128,7 +133,10 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
       position: node.position + Offset(0, 200),
     );
     nodes.add(newNode);
+
     node.children.add(newNode);
+
+    notifyListeners();
   }
 
   bool removeConnection(Node node) {
@@ -182,15 +190,12 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
 
   void toggleActiveNode(Node node) {
     activeNode = activeNode == node ? null : node;
-    print("active node");
-    print(activeNode);
     notifyListeners();
   }
+
   bool isActiveNode(Node node) {
     return activeNode == node ? true : false;
-
   }
-
 }
 
 class NodeBody extends StatelessWidget {

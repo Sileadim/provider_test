@@ -24,16 +24,19 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: MyHomePage(),
+      home: Home(),
     );
   }
 }
 
-List<Widget> layoutElements(
-    Matrix4 matrix, List<Node> nodes, BuildContext context) {
+List<Widget> layoutElements(BuildContext context) {
   List<Widget> layedOutNodes = [];
+
+  //print("layed nodes");
+  List nodes = context.watch<NodeStates>().getNodes();
+  //print(nodes.length);
   for (var node in nodes) {
-    Matrix4 newMatrix = matrix.clone()
+    Matrix4 newMatrix = context.watch<NodeStates>().matrix.clone()
       ..translate(node.position.dx, node.position.dy);
     layedOutNodes.add(
       Transform(
@@ -43,7 +46,7 @@ List<Widget> layoutElements(
             size: node.size,
             node: node,
             offsetLength: 0,
-            active: context.watch<NodeStates>().isActiveNode(node),
+            active: false,
             moveable: true,
             unrolled: true),
       ),
@@ -52,17 +55,20 @@ List<Widget> layoutElements(
   return layedOutNodes;
 }
 
-List<Widget> layoutButtons(
-    Matrix4 matrix, List<Node> nodes, BuildContext context) {
+List<Widget> layoutButtons(BuildContext context) {
   List<Widget> layedOutButtons = [];
+  const double buttonSize = 70;
+  List nodes = context.watch<NodeStates>().getNodes();
+
   for (var node in nodes) {
-    Matrix4 newMatrix = matrix.clone()
-      ..translate(node.position.dx, node.position.dy);
-    List<Map> buttonData = [
+    Matrix4 newMatrix = context.watch<NodeStates>().matrix.clone()
+      ..translate(node.position.dx + node.size / 2 - buttonSize / 2,
+          node.position.dy + node.size / 2 - buttonSize / 2);
+    final List<Map> buttonData = [
       {
         "node": node,
         "color": Colors.green,
-        "icon": Icons.add_circle_outline,
+        "iconData": Icons.add_circle_outline,
         "onTap": context.watch<NodeStates>().addChild,
       }
     ];
@@ -99,14 +105,14 @@ List<Widget> layoutButtons(
             transform: newMatrix,
             child: AnimatedButton(
                 onTap: b["onTap"],
-                node: b["node"],
+                node: node,
                 color: b["color"],
                 iconData: b["iconData"],
-                size: 70,
+                size: buttonSize,
                 active: false,
-                unrolled: node.active,
-                offsetLength: 100,
-                degreeRotation: i * 360 / buttonData.length)),
+                offsetLength: 0.8,
+                moveable: false,
+                degreeRotation: 0)),
       );
       i++;
     }
@@ -114,26 +120,40 @@ List<Widget> layoutButtons(
   return layedOutButtons;
 }
 
-class MyHomePage extends StatelessWidget {
-  const MyHomePage({Key key}) : super(key: key);
+class Home extends StatefulWidget {
+  Home({Key key}) : super(key: key);
+
+  @override
+  _HomeState createState() => _HomeState();
+}
+
+class _HomeState extends State<Home> {
+  @override
+  void initState() {
+    // TODO: implement initState
+    print("--------------------------Init home");
+    super.initState();
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
-    var nodes = context.watch<NodeStates>().getNodes();
-    Matrix4 matrix = context.watch<NodeStates>().matrix;
+    //print("********************");
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Example'),
-      ),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        child: CustomPaint(
-          painter: EdgePainter(
-            matrix: matrix,
-            nodes: nodes,
-          ),
+        appBar: AppBar(
+          title: const Text('Example'),
+        ),
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
           child: Stack(
             children: <Widget>[
+              CustomPaint(
+                  painter: EdgePainter(
+                nodes: context.watch<NodeStates>().getNodes(),
+                matrix: context.watch<NodeStates>().matrix,
+              )),
               MatrixGestureDetector(
                 // Need to fix edgepainter if rotation should be allowed
                 shouldRotate: false,
@@ -145,13 +165,11 @@ class MyHomePage extends StatelessWidget {
                     height: double.infinity,
                     color: Colors.transparent),
               ),
-              ...layoutElements(matrix, nodes, context),
-              //...layoutButtons(matrix, nodes, context)
+              ...layoutElements(context),
+              ...layoutButtons(context)
             ],
           ),
-        ),
-      ),
-    );
+        ));
   }
 }
 
@@ -171,6 +189,7 @@ class AnimatedButton extends StatefulWidget {
   final IconData iconData;
   final double offsetLength;
   final Color color;
+  int initCalls = 0;
 
   AnimatedButton(
       {Key key,
@@ -181,9 +200,9 @@ class AnimatedButton extends StatefulWidget {
       this.color,
       this.degreeRotation = 0,
       this.active = false,
-      this.unrolled = false,
+      this.unrolled,
       this.moveable = false,
-      this.offsetLength = 1})
+      this.offsetLength = 0})
       : super(key: key);
 
   @override
@@ -202,14 +221,18 @@ class _AnimatedButtonState extends State<AnimatedButton>
   Animation rotateAnimation;
   Animation offsetAnimation;
   Animation initialGrowAnimation;
+
   @override
   void initState() {
+    String type = widget.color != null ? "button" : "node";
+    print("Init $type");
+
     growAnimationController =
         AnimationController(vsync: this, duration: Duration(seconds: 1));
     growAnimation =
         Tween<double>(begin: 1, end: 1.4).animate(growAnimationController);
     unrollAnimationController =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 1000));
+        AnimationController(vsync: this, duration: Duration(milliseconds: 250));
     initialGrowAnimation =
         Tween<double>(begin: 0, end: 1).animate(unrollAnimationController);
     unrollAnimation = TweenSequence([
@@ -218,8 +241,12 @@ class _AnimatedButtonState extends State<AnimatedButton>
       TweenSequenceItem<double>(
           tween: Tween<double>(begin: 1.2, end: 1.0), weight: 25.0),
     ]).animate(unrollAnimationController);
-
-    offsetAnimation = Tween<Offset>(  begin: Offset.zero, end: Offset.fromDirection(getRadiansFromDegree(widget.degreeRotation), widget.offsetLength) ).animate(unrollAnimationController);
+    offsetAnimation = Tween<Offset>(
+            begin: Offset.zero,
+            end: Offset.fromDirection(
+                getRadiansFromDegree(widget.degreeRotation),
+                widget.offsetLength))
+        .animate(unrollAnimationController);
     rotateAnimation = Tween<double>(begin: 180.0, end: 0.0).animate(
         CurvedAnimation(
             parent: unrollAnimationController, curve: Curves.easeOut));
@@ -227,16 +254,29 @@ class _AnimatedButtonState extends State<AnimatedButton>
     super.initState();
   }
 
+  void dispose() {
+    growAnimationController.dispose();
+    unrollAnimationController.dispose();
+
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    String type = widget.color != null ? "button" : "node";
+    print("build $type");
     if (widget.active) {
       growAnimationController.repeat(reverse: true);
     } else if (!growAnimationController.isCompleted) {
       growAnimationController.reverse();
     }
 
-    if (widget.unrolled) {
-      unrollAnimationController.forward();
+    bool unrolled = widget.unrolled ??
+        context.watch<NodeStates>().isActiveNode(widget.node);
+    if (unrolled) {
+      if (!unrollAnimationController.isCompleted) {
+        unrollAnimationController.forward();
+      }
     } else {
       unrollAnimationController.reverse();
     }
@@ -245,34 +285,33 @@ class _AnimatedButtonState extends State<AnimatedButton>
       return widget.onTap(widget.node);
     }
 
-    return 
+    void onPanUpdate(DragUpdateDetails details) {
+      if (widget.moveable) {
+        context.read<NodeStates>().updatePosition(widget.node, details.delta);
+      }
+    }
 
-          SlideTransition(
-              position: offsetAnimation,
-              child: RotationTransition(
-              turns: unrollAnimation,
-              child: ScaleTransition(
-                          scale: initialGrowAnimation,
-                              child: ScaleTransition(
-                  scale: growAnimation,
-                  child: GestureDetector(
-                      onTap: () => _onTap(),
-                      onPanUpdate: (details) => {
-                            if (widget.moveable)
-                              {
-                                context
-                                    .read<NodeStates>()
-                                    .updatePosition(widget.node, details.delta)
-                              }
-                          },
-                      child: NodeBody(
-                          iconData: widget.iconData,
-                          color: widget.color ?? widget.node.getColor(),
-                          height: widget.node.size,
-                          width: widget.node.size)),
-                ),
-              ),
+    return SlideTransition(
+      position: offsetAnimation,
+      child: RotationTransition(
+        turns: unrollAnimation,
+        child: ScaleTransition(
+          scale: initialGrowAnimation,
+          child: ScaleTransition(
+            scale: growAnimation,
+            child: GestureDetector(
+                onTap: () => _onTap(),
+                onPanStart: (details) => {print(details)},
+                onPanEnd: (details) => {print(details)},
+                onPanUpdate: (details) => {onPanUpdate(details)},
+                child: NodeBody(
+                    iconData: widget.iconData,
+                    color: widget.color ?? widget.node.getColor(),
+                    height: widget.size ?? widget.node.size,
+                    width: widget.node.size)),
+          ),
+        ),
       ),
-          );
+    );
   }
 }
