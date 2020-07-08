@@ -1,5 +1,7 @@
 // ignore_for_file: public_member_api_docs, lines_longer_than_80_chars
 
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -31,26 +33,6 @@ class Node {
     return colorsToChooseFrom[count % 2];
   }
 
-  void increment() {
-    count++;
-  }
-
-  void toggle() {
-    active = !active;
-  }
-
-  void deactive() {
-    active = false;
-  }
-
-  void deactivatedOthers() {
-    for (var node in nodes) {
-      if (node != this) {
-        node.deactive();
-      }
-    }
-  }
-
   void updatePosition(Offset update) {
     position += update;
   }
@@ -70,18 +52,7 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
       position: Offset(10, 200),
     );
     nodes.add(parent);
-    nodes.add(Node(
-        colorsToChooseFrom: [Colors.yellow, Colors.blue],
-        nodes: nodes,
-        position: Offset(200, 200),
-        children: [parent]));
-  }
 
-  void incrementAll() {
-    for (var node in nodes) {
-      node.increment();
-    }
-    notifyListeners();
   }
 
   void updatePosition(Node node, Offset update) {
@@ -134,7 +105,16 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
     nodes.add(newNode);
 
     node.children.add(newNode);
+    notifyListeners();
+  }
 
+  void addNode() {
+    Node newNode = Node(
+      colorsToChooseFrom: [Colors.green, Colors.red],
+      nodes: nodes,
+      position: Offset(0, 0),
+    );
+    nodes.add(newNode);
     notifyListeners();
   }
 

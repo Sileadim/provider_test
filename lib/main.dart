@@ -129,15 +129,13 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   @override
-  void initState() {
-    super.initState();
-  }
-
-
-
-  @override
   Widget build(BuildContext context) {
+    print("----build all");
+
     return Scaffold(
+        floatingActionButton: FloatingActionButton(
+          onPressed: context.watch<NodeStates>().addNode,
+        ),
         appBar: AppBar(
           title: const Text('Example'),
         ),
@@ -186,7 +184,6 @@ class AnimatedButton extends StatefulWidget {
   final IconData iconData;
   final double offsetLength;
   final Color color;
-  int initCalls = 0;
 
   AnimatedButton(
       {Key key,
@@ -221,6 +218,9 @@ class _AnimatedButtonState extends State<AnimatedButton>
 
   @override
   void initState() {
+    super.initState();
+    String type = widget.color != null ? "button" : "node";
+    print("init $type");
     //String type = widget.color != null ? "button" : "node";
     growAnimationController =
         AnimationController(vsync: this, duration: Duration(seconds: 1));
@@ -245,8 +245,6 @@ class _AnimatedButtonState extends State<AnimatedButton>
     rotateAnimation = Tween<double>(begin: 180.0, end: 0.0).animate(
         CurvedAnimation(
             parent: unrollAnimationController, curve: Curves.easeOut));
-
-    super.initState();
   }
 
   void dispose() {
@@ -259,7 +257,7 @@ class _AnimatedButtonState extends State<AnimatedButton>
   @override
   Widget build(BuildContext context) {
     String type = widget.color != null ? "button" : "node";
-    print("build $type");
+    print("built $type");
     if (widget.active) {
       growAnimationController.repeat(reverse: true);
     } else if (!growAnimationController.isCompleted) {
