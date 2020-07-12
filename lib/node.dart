@@ -85,6 +85,7 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
     if (nodes.length > 1) {
       if (node == activeNode) {
         activeNode = null;
+        mode = Mode.def;
       }
       nodes.remove(node);
       for (var potentialParent in nodes) {
@@ -123,6 +124,25 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
     return true;
   }
 
+  bool hasConnection(Node node, Node other) {
+    if (node == null ||
+        other == null ||
+        isChild(node, other) ||
+        isChild(other, node)) {
+      return false;
+    }
+    return true;
+  }
+
+  bool hasAnyConnection(Node node) {
+    for (var other in nodes) {
+      if (hasConnection(node, other)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   bool canAddAnyAsChild(Node node) {
     for (var child in nodes) {
       if (canAddAsChild(node, child)) {
@@ -153,13 +173,25 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
     notifyListeners();
   }
 
+  //bool removeConnection(Node node) {
+  //  if (isChild(activeNode, node)) {
+  //    activeNode.children.remove(node);
+  //    return true;
+  //  } else if (isChild(node, activeNode)) {
+  //    node.children.remove(activeNode);
+  //    return true;
+  //  }
+  //  return false;
+  //}
   bool removeConnection(Node node) {
-    if (isChild(activeNode, node)) {
-      activeNode.children.remove(node);
-      return true;
-    } else if (isChild(node, activeNode)) {
-      node.children.remove(activeNode);
-      return true;
+    if (!(node == null || activeNode == null)) {
+      if (isChild(activeNode, node)) {
+        activeNode.children.remove(node);
+        return true;
+      } else if (isChild(node, activeNode)) {
+        node.children.remove(activeNode);
+        return true;
+      }
     }
     return false;
   }
@@ -186,17 +218,16 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
     switch (mode) {
       case Mode.removeExistingConnection:
         mode = Mode.def;
-        activeNode = null;
         break;
 
       case Mode.addExistingNodeAsChild:
         mode = Mode.removeExistingConnection;
-        activeNode = node;
+        //activeNode = node;
         break;
 
       case Mode.def:
         mode = Mode.removeExistingConnection;
-        activeNode = node;
+      //activeNode = node;
     }
     notifyListeners();
   }
@@ -209,8 +240,10 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
   void toggleActiveNodeOrPerformAction(Node node) {
     switch (mode) {
       case Mode.removeExistingConnection:
-        mode = Mode.def;
-        activeNode = null;
+        bool success = removeConnection(node);
+        if (success) {
+          notifyListeners();
+        }
         break;
 
       case Mode.addExistingNodeAsChild:

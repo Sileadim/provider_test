@@ -61,7 +61,13 @@ List<Widget> layoutElements(
       "color": Colors.red,
       "iconData": Icons.remove_circle_outline,
       "onTap": context.watch<NodeStates>().deleteNode
+    },    {
+      "type": ButtonType.removeExistingConnection,
+      "color": Colors.red[200],
+      "iconData": Icons.remove_circle_outline,
+      "onTap": context.watch<NodeStates>().toggleRemoveExistingConnection
     },
+
     {
       "type": ButtonType.complete,
       "color": Colors.amber,
@@ -76,8 +82,8 @@ List<Widget> layoutElements(
       ..translate(node.position.dx, node.position.dy);
     if (mainButtons.containsKey(node)) {
       print("added node from store");
-      layedOutNodes
-          .add(Transform(transform: mainButtonMatrix, child: mainButtons[node]));
+      layedOutNodes.add(
+          Transform(transform: mainButtonMatrix, child: mainButtons[node]));
     } else {
       var mainButton = AnimatedButton(
           key: GlobalKey(),
@@ -91,7 +97,8 @@ List<Widget> layoutElements(
           moveable: true,
           unrolled: true);
       mainButtons[node] = mainButton;
-      layedOutNodes.add(Transform(transform: mainButtonMatrix, child: mainButton));
+      layedOutNodes
+          .add(Transform(transform: mainButtonMatrix, child: mainButton));
     }
     Matrix4 buttonMatrix = context.watch<NodeStates>().matrix.clone()
       ..translate(node.position.dx + node.size / 2 - buttonSize / 2,
@@ -130,8 +137,9 @@ List<Widget> layoutElements(
     if (!nodes.contains(node)) {
       var mainButton = mainButtons.remove(node);
       mainButtonMatrix = context.watch<NodeStates>().matrix.clone()
-      ..translate(node.position.dx, node.position.dy);
-      layedOutNodes.add(Transform(transform: mainButtonMatrix, child: mainButton));
+        ..translate(node.position.dx, node.position.dy);
+      layedOutNodes
+          .add(Transform(transform: mainButtonMatrix, child: mainButton));
       var _ = buttons.remove(node);
     }
   }
@@ -320,7 +328,7 @@ class _AnimatedButtonState extends State<AnimatedButton>
     growAnimation =
         Tween<double>(begin: 1, end: 1.4).animate(growAnimationController);
     unrollAnimationController =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 250));
+        AnimationController(vsync: this, duration: Duration(milliseconds: 200));
     initialGrowAnimation =
         Tween<double>(begin: 0, end: 1).animate(unrollAnimationController);
     unrollAnimation = TweenSequence([
@@ -363,7 +371,6 @@ class _AnimatedButtonState extends State<AnimatedButton>
           returnColor = widget.color;
           clickable = true;
         }
-
         break;
       case ButtonType.addExistingNodeAsChild:
         if (context.watch<NodeStates>().canAddAnyAsChild(widget.node)) {
@@ -378,6 +385,12 @@ class _AnimatedButtonState extends State<AnimatedButton>
         break;
       case ButtonType.complete:
         returnColor = widget.color;
+        clickable = true;
+        break;
+      case ButtonType.removeExistingConnection:
+        if (context.watch<NodeStates>().hasAnyConnection(widget.node)){
+          returnColor = widget.color;
+        }
         clickable = true;
 
         break;
