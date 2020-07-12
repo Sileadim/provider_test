@@ -29,12 +29,24 @@ class MyApp extends StatelessWidget {
   }
 }
 
-List<Widget> layoutElements(BuildContext context) {
+List<Widget> layoutElements(BuildContext context, Map buttons) {
   List<Widget> layedOutNodes = [];
-
-  //print("layed nodes");
+  const double buttonSize = 70;
+  final List<Map> buttonData = [
+    {
+      "type": "addChild",
+      "color": Colors.green,
+      "iconData": Icons.add_circle_outline,
+      "onTap": context.watch<NodeStates>().addChild,
+    },
+    {
+      "type": "delete",
+      "color": Colors.red,
+      "iconData": Icons.remove_circle_outline,
+      "onTap": context.watch<NodeStates>().deleteNode
+    }
+  ];
   List nodes = context.watch<NodeStates>().getNodes();
-  //print(nodes.length);
   for (var node in nodes) {
     Matrix4 newMatrix = context.watch<NodeStates>().matrix.clone()
       ..translate(node.position.dx, node.position.dy);
@@ -51,6 +63,36 @@ List<Widget> layoutElements(BuildContext context) {
             unrolled: true),
       ),
     );
+
+    Matrix4 buttonMatrix = context.watch<NodeStates>().matrix.clone()
+      ..translate(node.position.dx + node.size / 2 - (buttonSize / 2),
+          node.position.dy + node.size / 2 - buttonSize / 2);
+    if (buttons.containsKey(node)) {
+      buttons[node].forEach((k, v) =>
+          layedOutNodes.add(Transform(transform: buttonMatrix, child: v)));
+    } else {
+      int i = 0;
+      for (var b in buttonData) {
+        if (i == 0) {
+          buttons[node] = {};
+        }
+        var button = AnimatedButton(
+            key: UniqueKey(),
+            onTap: b["onTap"],
+            node: node,
+            color: b["color"],
+            iconData: b["iconData"],
+            size: buttonSize,
+            offsetLength: 0.8,
+            moveable: false,
+            degreeRotation: i * 360 / buttonData.length);
+        layedOutNodes.add(Transform(transform: buttonMatrix, child: button));
+        buttons[node][b["type"]] = button;
+        i++;
+
+      }
+
+    }
   }
   return layedOutNodes;
 }
@@ -64,9 +106,16 @@ List<Widget> layoutButtons(BuildContext context) {
     Matrix4 newMatrix = context.watch<NodeStates>().matrix.clone()
       ..translate(node.position.dx + node.size / 2 - buttonSize / 2,
           node.position.dy + node.size / 2 - buttonSize / 2);
+
+    //final List<Map> buttonData = [
+    //  {
+    //    "color": Colors.green,
+    //    "iconData": Icons.add_circle_outline,
+    //    "onTap": () => {},
+    //  }
+    //];
     final List<Map> buttonData = [
       {
-        "node": node,
         "color": Colors.green,
         "iconData": Icons.add_circle_outline,
         "onTap": context.watch<NodeStates>().addChild,
@@ -128,9 +177,31 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  Map<Node, Map<dynamic, dynamic>> buttons = {};
+
   @override
   Widget build(BuildContext context) {
-    print("----build all");
+    print("*************");
+    List<Widget> elements = layoutElements(context, buttons);
+    List<Widget> stackChildren = [
+      CustomPaint(
+          painter: EdgePainter(
+        nodes: context.watch<NodeStates>().getNodes(),
+        matrix: context.watch<NodeStates>().matrix,
+      )),
+      MatrixGestureDetector(
+        // Need to fix edgepainter if rotation should be allowed
+        shouldRotate: false,
+        onMatrixUpdate: (m, tm, sm, rm) {
+          context.read<NodeStates>().updateMatrix(tm, sm, null);
+        },
+        child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            color: Colors.transparent),
+      ),
+      ...elements
+    ];
 
     return Scaffold(
         floatingActionButton: FloatingActionButton(
@@ -142,28 +213,7 @@ class _HomeState extends State<Home> {
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          child: Stack(
-            children: <Widget>[
-              CustomPaint(
-                  painter: EdgePainter(
-                nodes: context.watch<NodeStates>().getNodes(),
-                matrix: context.watch<NodeStates>().matrix,
-              )),
-              MatrixGestureDetector(
-                // Need to fix edgepainter if rotation should be allowed
-                shouldRotate: false,
-                onMatrixUpdate: (m, tm, sm, rm) {
-                  context.read<NodeStates>().updateMatrix(tm, sm, null);
-                },
-                child: Container(
-                    width: double.infinity,
-                    height: double.infinity,
-                    color: Colors.transparent),
-              ),
-              ...layoutElements(context),
-              ...layoutButtons(context)
-            ],
-          ),
+          child: Stack(children: stackChildren),
         ));
   }
 }
@@ -205,6 +255,7 @@ class AnimatedButton extends StatefulWidget {
 
 class _AnimatedButtonState extends State<AnimatedButton>
     with TickerProviderStateMixin {
+  final key = GlobalKey();
   @override
   AnimationController growAnimationController;
   Animation growAnimation;
@@ -215,12 +266,12 @@ class _AnimatedButtonState extends State<AnimatedButton>
   Animation rotateAnimation;
   Animation offsetAnimation;
   Animation initialGrowAnimation;
-
+  bool alreadyBuild = false;
   @override
   void initState() {
     super.initState();
     String type = widget.color != null ? "button" : "node";
-    print("init $type");
+    //print("init $type");
     //String type = widget.color != null ? "button" : "node";
     growAnimationController =
         AnimationController(vsync: this, duration: Duration(seconds: 1));
@@ -248,29 +299,33 @@ class _AnimatedButtonState extends State<AnimatedButton>
   }
 
   void dispose() {
-    growAnimationController.dispose();
-    unrollAnimationController.dispose();
-
+    growAnimationController?.dispose();
+    unrollAnimationController?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     String type = widget.color != null ? "button" : "node";
-    print("built $type");
+    //print("built $type");
+    //print("active: ${widget.active}");
     if (widget.active) {
       growAnimationController.repeat(reverse: true);
-    } else if (!growAnimationController.isCompleted) {
+    } else {
       growAnimationController.reverse();
     }
 
     bool unrolled = widget.unrolled ??
         context.watch<NodeStates>().isActiveNode(widget.node);
+    //print("Unrolled: $unrolled");
+//
+    //print(unrollAnimationController.status);
+    //print("$type unrolled: $unrolled completed: ${unrollAnimationController.isCompleted}  ");
     if (unrolled) {
       if (!unrollAnimationController.isCompleted) {
         unrollAnimationController.forward();
       }
-    } else {
+    } else if (unrollAnimationController.isCompleted) {
       unrollAnimationController.reverse();
     }
 

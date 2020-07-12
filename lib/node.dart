@@ -10,7 +10,7 @@ import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 enum Mode { addExistingNodeAsChild, removeExistingConnection, def }
 
 class Node {
-  final List<Color> colorsToChooseFrom;
+  final Color colorsToChooseFrom;
   bool active;
   int count = 0;
   List<Node> nodes;
@@ -30,7 +30,7 @@ class Node {
       : children = children ?? [];
 
   Color getColor() {
-    return colorsToChooseFrom[count % 2];
+    return colorsToChooseFrom;
   }
 
   void updatePosition(Offset update) {
@@ -44,15 +44,19 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
   Matrix4 matrix = Matrix4.identity();
   Node activeNode;
   Mode mode = Mode.def;
-
   NodeStates() {
     var parent = Node(
-      colorsToChooseFrom: [Colors.green, Colors.red],
+      colorsToChooseFrom: Colors.green,
       nodes: nodes,
       position: Offset(10, 200),
     );
     nodes.add(parent);
-
+    var child = Node(
+      colorsToChooseFrom: Colors.red,
+      nodes: nodes,
+      position: Offset(200, 200),
+    );
+    //nodes.add(child);
   }
 
   void updatePosition(Node node, Offset update) {
@@ -75,7 +79,12 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
 
   bool deleteNode(Node node) {
     if (nodes.length > 1) {
+      if (node == activeNode) {
+        activeNode = null;
+      }
       nodes.remove(node);
+
+      notifyListeners();
       return true;
     }
     return false;
@@ -98,7 +107,7 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
 
   void addChild(Node node) {
     Node newNode = Node(
-      colorsToChooseFrom: [Colors.green, Colors.red],
+      colorsToChooseFrom: Colors.blue,
       nodes: nodes,
       position: node.position + Offset(0, 200),
     );
@@ -110,7 +119,7 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
 
   void addNode() {
     Node newNode = Node(
-      colorsToChooseFrom: [Colors.green, Colors.red],
+      colorsToChooseFrom: Colors.yellow,
       nodes: nodes,
       position: Offset(0, 0),
     );
