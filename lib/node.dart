@@ -138,7 +138,6 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
     for (var other in nodes) {
       if (hasConnection(node, other)) {
         print("has connection");
-
         return true;
       }
     }
@@ -189,9 +188,13 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
     if (!(node == null || activeNode == null)) {
       if (isChild(activeNode, node)) {
         activeNode.children.remove(node);
+        mode = Mode.def;
+
         return true;
       } else if (isChild(node, activeNode)) {
         node.children.remove(activeNode);
+        mode = Mode.def;
+
         return true;
       }
     }
