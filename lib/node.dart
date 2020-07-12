@@ -206,15 +206,16 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
       case Mode.addExistingNodeAsChild:
         mode = Mode.def;
         break;
-
       case Mode.removeExistingConnection:
         mode = Mode.addExistingNodeAsChild;
         activeNode = node;
         break;
-
       case Mode.def:
         mode = Mode.addExistingNodeAsChild;
         activeNode = node;
+        break;
+      default:
+        break;
     }
     notifyListeners();
   }
@@ -260,6 +261,9 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
 
       case Mode.def:
         toggleActiveNode(node);
+        break;
+      default:
+        break;
     }
   }
 
