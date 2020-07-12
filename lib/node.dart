@@ -53,7 +53,7 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
     var parent = Node(
       colorsToChooseFrom: Colors.green,
       nodes: nodes,
-      position: Offset(10, 200),
+      position: Offset(100, 200),
     );
     nodes.add(parent);
   }
@@ -174,27 +174,15 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
     notifyListeners();
   }
 
-  //bool removeConnection(Node node) {
-  //  if (isChild(activeNode, node)) {
-  //    activeNode.children.remove(node);
-  //    return true;
-  //  } else if (isChild(node, activeNode)) {
-  //    node.children.remove(activeNode);
-  //    return true;
-  //  }
-  //  return false;
-  //}
   bool removeConnection(Node node) {
     if (!(node == null || activeNode == null)) {
       if (isChild(activeNode, node)) {
         activeNode.children.remove(node);
         mode = Mode.def;
-
         return true;
       } else if (isChild(node, activeNode)) {
         node.children.remove(activeNode);
         mode = Mode.def;
-
         return true;
       }
     }
@@ -251,14 +239,12 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
           notifyListeners();
         }
         break;
-
       case Mode.addExistingNodeAsChild:
         bool success = addExistingAsChild(node);
         if (success) {
           notifyListeners();
         }
         break;
-
       case Mode.def:
         toggleActiveNode(node);
         break;
@@ -269,5 +255,10 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
 
   bool isActiveNode(Node node) {
     return activeNode == node ? true : false;
+  }
+
+  void resetView() {
+    matrix = Matrix4.identity();
+    notifyListeners();
   }
 }

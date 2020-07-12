@@ -8,7 +8,6 @@ double getRadiansFromDegree(double degree) {
   return degree / unitRadian;
 }
 
-
 enum ButtonType {
   addChild,
   addExistingNodeAsChild,
@@ -16,9 +15,9 @@ enum ButtonType {
   main,
   delete,
   addInfo,
-  complete
+  complete,
+  info
 }
-
 
 class NodeBody extends StatelessWidget {
   final double height;
@@ -69,7 +68,6 @@ class NodeBody extends StatelessWidget {
     ]);
   }
 }
-
 
 class AnimatedButton extends StatefulWidget {
   final Node node;
@@ -192,6 +190,8 @@ class _AnimatedButtonState extends State<AnimatedButton>
         }
 
         break;
+      default:
+        break;
     }
     return [returnColor, clickable];
   }
@@ -205,6 +205,8 @@ class _AnimatedButtonState extends State<AnimatedButton>
         } else {
           unrolled = false;
         }
+        break;
+      default:
         break;
     }
     return unrolled;
@@ -224,6 +226,8 @@ class _AnimatedButtonState extends State<AnimatedButton>
             widget.node == context.watch<NodeStates>().activeNode) {
           active = true;
         }
+        break;
+      default:
         break;
     }
     return active;

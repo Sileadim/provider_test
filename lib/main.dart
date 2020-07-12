@@ -56,7 +56,7 @@ List<Widget> layoutElements(
     {
       "type": ButtonType.removeExistingConnection,
       "color": Colors.red[200],
-      "iconData": Icons.remove_circle,
+      "iconData": Icons.content_cut,
       "onTap": context.watch<NodeStates>().toggleRemoveExistingConnection
     },
     {
@@ -64,6 +64,12 @@ List<Widget> layoutElements(
       "color": Colors.amber,
       "iconData": Icons.check,
       "onTap": context.watch<NodeStates>().toggleComplete
+    },
+    {
+      "type": ButtonType.info,
+      "color": Colors.blue,
+      "iconData": Icons.create,
+      "onTap": () => {}
     }
   ];
   List nodes = context.watch<NodeStates>().getNodes();
@@ -171,11 +177,11 @@ class _HomeState extends State<Home> {
       ),
       ...elements
     ];
-
     return Scaffold(
+        drawer: Drawer(child: Container()),
         floatingActionButton: FloatingActionButton(
-          onPressed: context.watch<NodeStates>().addNode,
-        ),
+            onPressed: context.watch<NodeStates>().resetView,
+            child: Icon(Icons.refresh, color: Colors.white)),
         appBar: AppBar(
           title: const Text('Example'),
         ),
