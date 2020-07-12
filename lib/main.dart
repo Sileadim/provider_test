@@ -41,7 +41,8 @@ enum ButtonType {
   complete
 }
 
-List<Widget> layoutElements(BuildContext context, Map buttons) {
+List<Widget> layoutElements(
+    BuildContext context, Map mainButtons, Map buttons) {
   List<Widget> layedOutNodes = [];
   const double buttonSize = 70;
   final List<Map> buttonData = [
@@ -71,25 +72,29 @@ List<Widget> layoutElements(BuildContext context, Map buttons) {
     }
   ];
   List nodes = context.watch<NodeStates>().getNodes();
+
   for (var node in nodes) {
     Matrix4 newMatrix = context.watch<NodeStates>().matrix.clone()
       ..translate(node.position.dx, node.position.dy);
-    layedOutNodes.add(
-      Transform(
-        transform: newMatrix,
-        child: AnimatedButton(
-            onTap: context.watch<NodeStates>().toggleActiveNodeOrPerformAction,
-            type: ButtonType.main,
-            color: Colors.brown[300],
-            size: node.size,
-            node: node,
-            offsetLength: 0,
-            active: false,
-            moveable: true,
-            unrolled: true),
-      ),
-    );
-
+    if (mainButtons.containsKey(node)) {
+      print("added node from store");
+      layedOutNodes
+          .add(Transform(transform: newMatrix, child: mainButtons[node]));
+    } else {
+      var mainButton = AnimatedButton(
+          key: UniqueKey(),
+          onTap: context.watch<NodeStates>().toggleActiveNodeOrPerformAction,
+          type: ButtonType.main,
+          color: Colors.brown[300],
+          size: node.size,
+          node: node,
+          offsetLength: 0,
+          active: false,
+          moveable: true,
+          unrolled: true);
+      mainButtons[node] = mainButton;
+      layedOutNodes.add(Transform(transform: newMatrix, child: mainButton));
+    }
     Matrix4 buttonMatrix = context.watch<NodeStates>().matrix.clone()
       ..translate(node.position.dx + node.size / 2 - buttonSize / 2,
           node.position.dy + node.size / 2 - buttonSize / 2);
@@ -120,6 +125,19 @@ List<Widget> layoutElements(BuildContext context, Map buttons) {
       }
     }
   }
+
+  // delete Buttons for non existing nodes from dict
+  //List keys = mainButtons.keys.toList();
+  //print(keys);
+  //for (var node in keys) {
+  //  if (!nodes.contains(node)) {
+  //    var mainButton = mainButtons.remove(node);
+  //    //layedOutNodes.add(mainButton);
+  //    var _ = buttons.remove(node);
+  //  }
+  //}
+  //print(mainButtons);
+  //print(layedOutNodes);
   return layedOutNodes;
 }
 
@@ -204,11 +222,12 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   Map<Node, Map<dynamic, dynamic>> buttons = {};
+  Map<Node, dynamic> mainButtons = {};
 
   @override
   Widget build(BuildContext context) {
     print("*************");
-    List<Widget> elements = layoutElements(context, buttons);
+    List<Widget> elements = layoutElements(context, mainButtons, buttons);
     List<Widget> stackChildren = [
       CustomPaint(
           painter: EdgePainter(
@@ -296,8 +315,8 @@ class _AnimatedButtonState extends State<AnimatedButton>
   @override
   void initState() {
     super.initState();
-    String type = widget.color != null ? "button" : "node";
-    //print("init $type");
+
+    print("init ${widget.type}");
     //String type = widget.color != null ? "button" : "node";
     growAnimationController =
         AnimationController(vsync: this, duration: Duration(seconds: 1));
@@ -330,8 +349,9 @@ class _AnimatedButtonState extends State<AnimatedButton>
     super.dispose();
   }
 
-  Color determineColor() {
+  List determineColorAndClickability() {
     Color returnColor = Colors.grey[300];
+    bool clickable = false;
     switch (widget.type) {
       case ButtonType.main:
         if (widget.node.completed) {
@@ -339,45 +359,62 @@ class _AnimatedButtonState extends State<AnimatedButton>
         } else {
           returnColor = widget.color;
         }
+        clickable = true;
         break;
       case ButtonType.delete:
         if (context.watch<NodeStates>().nodes.length > 1) {
           returnColor = widget.color;
+          clickable = true;
         }
+
         break;
       case ButtonType.addExistingNodeAsChild:
         if (context.watch<NodeStates>().canAddAnyAsChild(widget.node)) {
           returnColor = widget.color;
+          clickable = true;
         }
         break;
       case ButtonType.addChild:
         returnColor = widget.color;
+        clickable = true;
+
         break;
       case ButtonType.complete:
         returnColor = widget.color;
+        clickable = true;
+
         break;
     }
-    return returnColor;
+    return [returnColor, clickable];
+  }
+
+  bool determineUnrolled() {
+    bool unrolled = context.watch<NodeStates>().isActiveNode(widget.node);
+    switch (widget.type) {
+      case ButtonType.main:
+        if (context.watch<NodeStates>().nodes.contains(widget.node)) {
+          unrolled = true;
+        } else {
+          unrolled = false;
+        }
+        break;
+    }
+    return unrolled;
   }
 
   @override
   Widget build(BuildContext context) {
+    print("${widget.type} ${identityHashCode(unrollAnimationController)}");
+    List colorAndClickable = determineColorAndClickability();
+
     String type = widget.color != null ? "button" : "node";
-    //print("built $type");
-    //print("active: ${widget.active}");
     if (widget.active) {
       growAnimationController.repeat(reverse: true);
     } else {
       growAnimationController.reverse();
     }
 
-    bool unrolled = widget.unrolled ??
-        context.watch<NodeStates>().isActiveNode(widget.node);
-    //print("Unrolled: $unrolled");
-//
-    //print(unrollAnimationController.status);
-    //print("$type unrolled: $unrolled completed: ${unrollAnimationController.isCompleted}  ");
-    if (unrolled) {
+    if (determineUnrolled()) {
       if (!unrollAnimationController.isCompleted) {
         unrollAnimationController.forward();
       }
@@ -403,16 +440,19 @@ class _AnimatedButtonState extends State<AnimatedButton>
           scale: initialGrowAnimation,
           child: ScaleTransition(
             scale: growAnimation,
-            child: GestureDetector(
-                onTap: () => _onTap(),
-                onPanStart: (details) => {print(details)},
-                onPanEnd: (details) => {print(details)},
-                onPanUpdate: (details) => {onPanUpdate(details)},
-                child: NodeBody(
-                    iconData: widget.iconData,
-                    color: determineColor(),
-                    height: widget.size ?? widget.node.size,
-                    width: widget.size ?? widget.node.size)),
+            child: AbsorbPointer(
+              absorbing: !colorAndClickable[1],
+              child: GestureDetector(
+                  onTap: () => _onTap(),
+                  onPanStart: (details) => {print(details)},
+                  onPanEnd: (details) => {print(details)},
+                  onPanUpdate: (details) => {onPanUpdate(details)},
+                  child: NodeBody(
+                      iconData: widget.iconData,
+                      color: colorAndClickable[0],
+                      height: widget.size ?? widget.node.size,
+                      width: widget.size ?? widget.node.size)),
+            ),
           ),
         ),
       ),

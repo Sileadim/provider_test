@@ -56,12 +56,6 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
       position: Offset(10, 200),
     );
     nodes.add(parent);
-    //var child = Node(
-    //  colorsToChooseFrom: Colors.red,
-    //  nodes: nodes,
-    //  position: Offset(200, 200),
-    //);
-    //nodes.add(child);
   }
 
   void updatePosition(Node node, Offset update) {
