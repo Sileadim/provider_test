@@ -65,13 +65,13 @@ class EdgePainter extends CustomPainter {
         // got to scale radius of box, radius = half of heigth or width
         // for whatever reason arrowpath point the arrow head ~5 pixel in.
         Offset toChildEdge = computeOffsetToEdge(
-            (parent.size / 2 + 5) * decomposedValues.scale,
+            (parent.size / 2 ) * decomposedValues.scale,
             transformedParentPosition.dx,
             transformedParentPosition.dy,
             transformedChildPosition.dx,
             transformedChildPosition.dy);
         Offset almostToChildEdge = computeOffsetToEdge(
-            (parent.size / 2 + 6) * decomposedValues.scale,
+            (parent.size / 2 ) * decomposedValues.scale,
             transformedParentPosition.dx,
             transformedParentPosition.dy,
             transformedChildPosition.dx,

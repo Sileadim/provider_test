@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 
-enum Mode { addExistingNodeAsChild, removeExistingConnection, def }
+enum Mode { addExistingNodeAsChild, removeExistingConnection, def, delete }
 
 class Node {
   final Color colorsToChooseFrom;
@@ -18,6 +18,7 @@ class Node {
   int id = 0;
   Offset position;
   double size;
+  bool completed = false;
 
   Node(
       {this.colorsToChooseFrom,
@@ -36,6 +37,10 @@ class Node {
   void updatePosition(Offset update) {
     position += update;
   }
+
+  void toggleCompleted() {
+    completed = !completed;
+  }
 }
 
 /// Mix-in [DiagnosticableTreeMixin] to have access to [debugFillProperties] for the devtool
@@ -51,11 +56,11 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
       position: Offset(10, 200),
     );
     nodes.add(parent);
-    var child = Node(
-      colorsToChooseFrom: Colors.red,
-      nodes: nodes,
-      position: Offset(200, 200),
-    );
+    //var child = Node(
+    //  colorsToChooseFrom: Colors.red,
+    //  nodes: nodes,
+    //  position: Offset(200, 200),
+    //);
     //nodes.add(child);
   }
 
@@ -73,21 +78,28 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
     notifyListeners();
   }
 
+  void toggleComplete(Node node) {
+    node.toggleCompleted();
+    notifyListeners();
+  }
+
   List<Node> getNodes() {
     return nodes;
   }
 
-  bool deleteNode(Node node) {
+  void deleteNode(Node node) {
     if (nodes.length > 1) {
       if (node == activeNode) {
         activeNode = null;
       }
       nodes.remove(node);
-
+      for (var potentialParent in nodes) {
+        if (potentialParent.children.contains(node)) {
+          potentialParent.children.remove(node);
+        }
+      }
       notifyListeners();
-      return true;
     }
-    return false;
   }
 
   bool isChild(Node parent, Node child) {
@@ -98,9 +110,29 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
   }
 
   bool addExistingAsChild(Node node) {
-    if (!isChild(activeNode, node) && activeNode != node) {
+    if (canAddAsChild(activeNode, node)) {
       activeNode.children.add(node);
       return true;
+    }
+    return false;
+  }
+
+  bool canAddAsChild(Node node, Node child) {
+    if (node != null) {
+      if (node.children.contains(child) ||
+          child.children.contains(node) ||
+          node == child) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool canAddAnyAsChild(Node node) {
+    for (var child in nodes) {
+      if (canAddAsChild(node, child)) {
+        return true;
+      }
     }
     return false;
   }
@@ -112,7 +144,6 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
       position: node.position + Offset(0, 200),
     );
     nodes.add(newNode);
-
     node.children.add(newNode);
     notifyListeners();
   }
@@ -142,7 +173,6 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
     switch (mode) {
       case Mode.addExistingNodeAsChild:
         mode = Mode.def;
-        activeNode = null;
         break;
 
       case Mode.removeExistingConnection:
@@ -179,6 +209,25 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
   void toggleActiveNode(Node node) {
     activeNode = activeNode == node ? null : node;
     notifyListeners();
+  }
+
+  void toggleActiveNodeOrPerformAction(Node node) {
+    switch (mode) {
+      case Mode.removeExistingConnection:
+        mode = Mode.def;
+        activeNode = null;
+        break;
+
+      case Mode.addExistingNodeAsChild:
+        bool success = addExistingAsChild(node);
+        if (success) {
+          notifyListeners();
+        }
+        break;
+
+      case Mode.def:
+        toggleActiveNode(node);
+    }
   }
 
   bool isActiveNode(Node node) {

@@ -7,6 +7,8 @@ import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 import 'package:provider_test/edgepainter.dart';
 import 'package:provider_test/node.dart';
 
+enum NodeType { node, delete, addExistingChild }
+
 void main() {
   runApp(
     /// Providers are above [MyApp] instead of inside it, so that tests
@@ -29,21 +31,43 @@ class MyApp extends StatelessWidget {
   }
 }
 
+enum ButtonType {
+  addChild,
+  addExistingNodeAsChild,
+  removeExistingConnection,
+  main,
+  delete,
+  addInfo,
+  complete
+}
+
 List<Widget> layoutElements(BuildContext context, Map buttons) {
   List<Widget> layedOutNodes = [];
   const double buttonSize = 70;
   final List<Map> buttonData = [
     {
-      "type": "addChild",
+      "type": ButtonType.addChild,
       "color": Colors.green,
       "iconData": Icons.add_circle_outline,
       "onTap": context.watch<NodeStates>().addChild,
     },
     {
-      "type": "delete",
+      "type": ButtonType.addExistingNodeAsChild,
+      "color": Colors.green[200],
+      "iconData": Icons.add_circle_outline,
+      "onTap": context.watch<NodeStates>().toggleAddChild
+    },
+    {
+      "type": ButtonType.delete,
       "color": Colors.red,
       "iconData": Icons.remove_circle_outline,
       "onTap": context.watch<NodeStates>().deleteNode
+    },
+    {
+      "type": ButtonType.complete,
+      "color": Colors.amber,
+      "iconData": Icons.check,
+      "onTap": context.watch<NodeStates>().toggleComplete
     }
   ];
   List nodes = context.watch<NodeStates>().getNodes();
@@ -54,7 +78,9 @@ List<Widget> layoutElements(BuildContext context, Map buttons) {
       Transform(
         transform: newMatrix,
         child: AnimatedButton(
-            onTap: context.watch<NodeStates>().toggleActiveNode,
+            onTap: context.watch<NodeStates>().toggleActiveNodeOrPerformAction,
+            type: ButtonType.main,
+            color: Colors.brown[300],
             size: node.size,
             node: node,
             offsetLength: 0,
@@ -65,8 +91,9 @@ List<Widget> layoutElements(BuildContext context, Map buttons) {
     );
 
     Matrix4 buttonMatrix = context.watch<NodeStates>().matrix.clone()
-      ..translate(node.position.dx + node.size / 2 - (buttonSize / 2),
+      ..translate(node.position.dx + node.size / 2 - buttonSize / 2,
           node.position.dy + node.size / 2 - buttonSize / 2);
+
     if (buttons.containsKey(node)) {
       buttons[node].forEach((k, v) =>
           layedOutNodes.add(Transform(transform: buttonMatrix, child: v)));
@@ -78,20 +105,19 @@ List<Widget> layoutElements(BuildContext context, Map buttons) {
         }
         var button = AnimatedButton(
             key: UniqueKey(),
+            type: b["type"],
             onTap: b["onTap"],
             node: node,
             color: b["color"],
             iconData: b["iconData"],
             size: buttonSize,
-            offsetLength: 0.8,
+            offsetLength: 1.3,
             moveable: false,
             degreeRotation: i * 360 / buttonData.length);
         layedOutNodes.add(Transform(transform: buttonMatrix, child: button));
         buttons[node][b["type"]] = button;
         i++;
-
       }
-
     }
   }
   return layedOutNodes;
@@ -234,7 +260,7 @@ class AnimatedButton extends StatefulWidget {
   final IconData iconData;
   final double offsetLength;
   final Color color;
-
+  final ButtonType type;
   AnimatedButton(
       {Key key,
       this.node,
@@ -243,6 +269,7 @@ class AnimatedButton extends StatefulWidget {
       this.iconData,
       this.color,
       this.degreeRotation = 0,
+      this.type,
       this.active = false,
       this.unrolled,
       this.moveable = false,
@@ -266,7 +293,6 @@ class _AnimatedButtonState extends State<AnimatedButton>
   Animation rotateAnimation;
   Animation offsetAnimation;
   Animation initialGrowAnimation;
-  bool alreadyBuild = false;
   @override
   void initState() {
     super.initState();
@@ -302,6 +328,36 @@ class _AnimatedButtonState extends State<AnimatedButton>
     growAnimationController?.dispose();
     unrollAnimationController?.dispose();
     super.dispose();
+  }
+
+  Color determineColor() {
+    Color returnColor = Colors.grey[300];
+    switch (widget.type) {
+      case ButtonType.main:
+        if (widget.node.completed) {
+          returnColor = Colors.amber;
+        } else {
+          returnColor = widget.color;
+        }
+        break;
+      case ButtonType.delete:
+        if (context.watch<NodeStates>().nodes.length > 1) {
+          returnColor = widget.color;
+        }
+        break;
+      case ButtonType.addExistingNodeAsChild:
+        if (context.watch<NodeStates>().canAddAnyAsChild(widget.node)) {
+          returnColor = widget.color;
+        }
+        break;
+      case ButtonType.addChild:
+        returnColor = widget.color;
+        break;
+      case ButtonType.complete:
+        returnColor = widget.color;
+        break;
+    }
+    return returnColor;
   }
 
   @override
@@ -354,9 +410,9 @@ class _AnimatedButtonState extends State<AnimatedButton>
                 onPanUpdate: (details) => {onPanUpdate(details)},
                 child: NodeBody(
                     iconData: widget.iconData,
-                    color: widget.color ?? widget.node.getColor(),
+                    color: determineColor(),
                     height: widget.size ?? widget.node.size,
-                    width: widget.node.size)),
+                    width: widget.size ?? widget.node.size)),
           ),
         ),
       ),
