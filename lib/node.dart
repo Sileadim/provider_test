@@ -125,18 +125,20 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
   }
 
   bool hasConnection(Node node, Node other) {
-    if (node == null ||
-        other == null ||
-        isChild(node, other) ||
-        isChild(other, node)) {
+    if (node == null || other == null) {
       return false;
     }
-    return true;
+    if (isChild(node, other) || isChild(other, node)) {
+      return true;
+    }
+    return false;
   }
 
   bool hasAnyConnection(Node node) {
     for (var other in nodes) {
       if (hasConnection(node, other)) {
+        print("has connection");
+
         return true;
       }
     }

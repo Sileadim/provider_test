@@ -64,7 +64,7 @@ List<Widget> layoutElements(
     },    {
       "type": ButtonType.removeExistingConnection,
       "color": Colors.red[200],
-      "iconData": Icons.remove_circle_outline,
+      "iconData": Icons.remove_circle ,
       "onTap": context.watch<NodeStates>().toggleRemoveExistingConnection
     },
 
@@ -144,78 +144,6 @@ List<Widget> layoutElements(
     }
   }
   return layedOutNodes;
-}
-
-List<Widget> layoutButtons(BuildContext context) {
-  List<Widget> layedOutButtons = [];
-  const double buttonSize = 70;
-  List nodes = context.watch<NodeStates>().getNodes();
-
-  for (var node in nodes) {
-    Matrix4 mainButtonMatrix = context.watch<NodeStates>().matrix.clone()
-      ..translate(node.position.dx + node.size / 2 - buttonSize / 2,
-          node.position.dy + node.size / 2 - buttonSize / 2);
-
-    //final List<Map> buttonData = [
-    //  {
-    //    "color": Colors.green,
-    //    "iconData": Icons.add_circle_outline,
-    //    "onTap": () => {},
-    //  }
-    //];
-    final List<Map> buttonData = [
-      {
-        "color": Colors.green,
-        "iconData": Icons.add_circle_outline,
-        "onTap": context.watch<NodeStates>().addChild,
-      }
-    ];
-    //[Colors.green, Icons.add_circle, addNewParent, false],
-    //if (children.length < nodes.length - 1)
-    //  [
-    //    Colors.green[200],
-    //    Icons.arrow_forward,
-    //    toggleAddChild,
-    //    activeNodeWrapper?.activeNode == this &&
-    //            activeNodeWrapper?.mode == Mode.addExistingChild
-    //        ? true
-    //        : false
-    //  ],
-    //if (nodes.length > 1)
-    //  [Colors.red, Icons.remove_circle_outline, delete, false],
-    //if (children.length > 0)
-    //  [
-    //    Colors.red[200],
-    //    Icons.remove,
-    //    toggleDeleteChild,
-    //    activeNodeWrapper?.activeNode == this &&
-    //            activeNodeWrapper?.mode == Mode.removeChild
-    //        ? true
-    //        : false
-    //  ],
-    //[Colors.blue, Icons.create, () => {}, false]
-    //;
-
-    int i = 0;
-    for (var b in buttonData) {
-      layedOutButtons.add(
-        Transform(
-            transform: mainButtonMatrix,
-            child: AnimatedButton(
-                onTap: b["onTap"],
-                node: node,
-                color: b["color"],
-                iconData: b["iconData"],
-                size: buttonSize,
-                active: false,
-                offsetLength: 0.8,
-                moveable: false,
-                degreeRotation: 0)),
-      );
-      i++;
-    }
-  }
-  return layedOutButtons;
 }
 
 class Home extends StatefulWidget {
