@@ -7,8 +7,6 @@ import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 import 'package:provider_test/edgepainter.dart';
 import 'package:provider_test/node.dart';
 
-enum NodeType { node, delete, addExistingChild }
-
 void main() {
   runApp(
     /// Providers are above [MyApp] instead of inside it, so that tests
@@ -72,17 +70,17 @@ List<Widget> layoutElements(
     }
   ];
   List nodes = context.watch<NodeStates>().getNodes();
-
+  Matrix4 mainButtonMatrix;
   for (var node in nodes) {
-    Matrix4 newMatrix = context.watch<NodeStates>().matrix.clone()
+    mainButtonMatrix = context.watch<NodeStates>().matrix.clone()
       ..translate(node.position.dx, node.position.dy);
     if (mainButtons.containsKey(node)) {
       print("added node from store");
       layedOutNodes
-          .add(Transform(transform: newMatrix, child: mainButtons[node]));
+          .add(Transform(transform: mainButtonMatrix, child: mainButtons[node]));
     } else {
       var mainButton = AnimatedButton(
-          key: UniqueKey(),
+          key: GlobalKey(),
           onTap: context.watch<NodeStates>().toggleActiveNodeOrPerformAction,
           type: ButtonType.main,
           color: Colors.brown[300],
@@ -93,7 +91,7 @@ List<Widget> layoutElements(
           moveable: true,
           unrolled: true);
       mainButtons[node] = mainButton;
-      layedOutNodes.add(Transform(transform: newMatrix, child: mainButton));
+      layedOutNodes.add(Transform(transform: mainButtonMatrix, child: mainButton));
     }
     Matrix4 buttonMatrix = context.watch<NodeStates>().matrix.clone()
       ..translate(node.position.dx + node.size / 2 - buttonSize / 2,
@@ -126,18 +124,17 @@ List<Widget> layoutElements(
     }
   }
 
-  // delete Buttons for non existing nodes from dict
-  //List keys = mainButtons.keys.toList();
-  //print(keys);
-  //for (var node in keys) {
-  //  if (!nodes.contains(node)) {
-  //    var mainButton = mainButtons.remove(node);
-  //    //layedOutNodes.add(mainButton);
-  //    var _ = buttons.remove(node);
-  //  }
-  //}
-  //print(mainButtons);
-  //print(layedOutNodes);
+  //  delete Buttons for non existing nodes from dict
+  List keys = mainButtons.keys.toList();
+  for (var node in keys) {
+    if (!nodes.contains(node)) {
+      var mainButton = mainButtons.remove(node);
+      mainButtonMatrix = context.watch<NodeStates>().matrix.clone()
+      ..translate(node.position.dx, node.position.dy);
+      layedOutNodes.add(Transform(transform: mainButtonMatrix, child: mainButton));
+      var _ = buttons.remove(node);
+    }
+  }
   return layedOutNodes;
 }
 
@@ -147,7 +144,7 @@ List<Widget> layoutButtons(BuildContext context) {
   List nodes = context.watch<NodeStates>().getNodes();
 
   for (var node in nodes) {
-    Matrix4 newMatrix = context.watch<NodeStates>().matrix.clone()
+    Matrix4 mainButtonMatrix = context.watch<NodeStates>().matrix.clone()
       ..translate(node.position.dx + node.size / 2 - buttonSize / 2,
           node.position.dy + node.size / 2 - buttonSize / 2);
 
@@ -195,7 +192,7 @@ List<Widget> layoutButtons(BuildContext context) {
     for (var b in buttonData) {
       layedOutButtons.add(
         Transform(
-            transform: newMatrix,
+            transform: mainButtonMatrix,
             child: AnimatedButton(
                 onTap: b["onTap"],
                 node: node,

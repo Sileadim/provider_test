@@ -106,6 +106,7 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
   bool addExistingAsChild(Node node) {
     if (canAddAsChild(activeNode, node)) {
       activeNode.children.add(node);
+      mode = Mode.def;
       return true;
     }
     return false;
