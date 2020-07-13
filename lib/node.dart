@@ -7,7 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 
-enum Mode { addExistingNodeAsChild, removeExistingConnection, def, delete }
+enum Mode {
+  addExistingNodeAsChild,
+  removeExistingConnection,
+  def,
+  delete,
+  addInfo
+}
 
 class Node {
   final Color colorsToChooseFrom;
@@ -53,9 +59,20 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
     var parent = Node(
       colorsToChooseFrom: Colors.green,
       nodes: nodes,
-      position: Offset(100, 200),
+      position: Offset(0, 0),
     );
     nodes.add(parent);
+  }
+  void setDefault() {
+    mode = Mode.def;
+    notifyListeners();
+  }
+
+  void setModeToAddInfo(Node node) {
+    activeNode = node;
+    mode = Mode.addInfo;
+    print("set mode to addInfo");
+    notifyListeners();
   }
 
   void updatePosition(Node node, Offset update) {

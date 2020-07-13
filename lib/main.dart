@@ -66,10 +66,10 @@ List<Widget> layoutElements(
       "onTap": context.watch<NodeStates>().toggleComplete
     },
     {
-      "type": ButtonType.info,
+      "type": ButtonType.addInfo,
       "color": Colors.blue,
       "iconData": Icons.create,
-      "onTap": () => {}
+      "onTap": context.watch<NodeStates>().setModeToAddInfo
     }
   ];
   List nodes = context.watch<NodeStates>().getNodes();
@@ -98,8 +98,8 @@ List<Widget> layoutElements(
           .add(Transform(transform: mainButtonMatrix, child: mainButton));
     }
     Matrix4 buttonMatrix = context.watch<NodeStates>().matrix.clone()
-      ..translate(node.position.dx + node.size / 2 - buttonSize / 2,
-          node.position.dy + node.size / 2 - buttonSize / 2);
+      ..translate(node.position.dx  ,
+          node.position.dy );
 
     if (buttons.containsKey(node)) {
       buttons[node].forEach((k, v) =>
@@ -175,7 +175,9 @@ class _HomeState extends State<Home> {
             height: double.infinity,
             color: Colors.transparent),
       ),
-      ...elements
+      ...elements,
+      TextEntryMenu()
+
     ];
     return Scaffold(
         drawer: Drawer(child: Container()),
@@ -188,7 +190,7 @@ class _HomeState extends State<Home> {
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          child: Stack(children: stackChildren),
+          child: Stack( alignment: Alignment.center, children: stackChildren),
         ));
   }
 }

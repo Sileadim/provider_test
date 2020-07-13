@@ -188,7 +188,10 @@ class _AnimatedButtonState extends State<AnimatedButton>
           returnColor = widget.color;
           clickable = true;
         }
-
+        break;
+      case ButtonType.addInfo:
+        returnColor = widget.color;
+        clickable = true;
         break;
       default:
         break;
@@ -288,5 +291,65 @@ class _AnimatedButtonState extends State<AnimatedButton>
         ),
       ),
     );
+  }
+}
+
+class TextEntryMenu extends StatefulWidget {
+  TextEntryMenu({Key key}) : super(key: key);
+
+  @override
+  _TextEntryMenuState createState() => _TextEntryMenuState();
+}
+
+double smallBorderwidth = 5;
+
+class _TextEntryMenuState extends State<TextEntryMenu> {
+  @override
+  Widget build(BuildContext context) {
+    bool _open = context.watch<NodeStates>().mode == Mode.addInfo;
+    print("animated container");
+    print(_open);
+
+    void onPressed() {
+      FocusScope.of(context).unfocus();
+      context.read<NodeStates>().setDefault();
+    }
+
+    return AnimatedContainer(
+        duration: Duration(milliseconds: 500),
+        width: _open ? MediaQuery.of(context).size.height : 0,
+        height: _open ? MediaQuery.of(context).size.height : 0,
+        color: Colors.brown,
+        child: Container(
+            child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            Flexible(
+              flex: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: new BorderRadius.only(
+                        topLeft: const Radius.circular(40.0),
+                        topRight: const Radius.circular(40.0),
+                        bottomLeft: const Radius.circular(40.0),
+                        bottomRight: const Radius.circular(40.0)),
+                    color: Colors.grey[400],
+                  ),
+                  child: TextField(
+                    maxLines: null,
+                    decoration: InputDecoration(
+                        border: InputBorder.none, hintText: 'Start here...'),
+                  ),
+                ),
+              ),
+            ),
+            Flexible(
+                flex: 1,
+                child: MaterialButton(
+                    onPressed: onPressed, child: Icon(Icons.save)))
+          ],
+        )));
   }
 }
