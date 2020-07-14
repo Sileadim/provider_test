@@ -24,16 +24,22 @@ class NodeBody extends StatelessWidget {
   final double width;
   final Color color;
   final IconData iconData;
+  final bool shadow;
   static const double smallBorderwidth = 3;
 
   NodeBody(
-      {Key key, this.height, this.width, this.color, this.iconData = Icons.add})
+      {Key key,
+      this.height = 50,
+      this.width = 50,
+      this.shadow = true,
+      this.color = Colors.blue,
+      this.iconData = Icons.add})
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Stack(alignment: Alignment.center, children: <Widget>[
-      Container(
+      shadow ? Container(
           height: height,
           width: width,
           decoration: BoxDecoration(
@@ -48,7 +54,16 @@ class NodeBody extends StatelessWidget {
                 offset: Offset(5, 5), // changes position of shadow
               ),
             ],
-          )),
+          )):
+            Container(
+          height: height,
+          width: width,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            border: Border.all(width: smallBorderwidth, color: Colors.brown),
+      
+          )),        
       Container(
           height: height - 2 * smallBorderwidth,
           width: width - 2 * smallBorderwidth,
@@ -307,9 +322,6 @@ class _TextEntryMenuState extends State<TextEntryMenu> {
   @override
   Widget build(BuildContext context) {
     bool _open = context.watch<NodeStates>().mode == Mode.addInfo;
-    print("animated container");
-    print(_open);
-
     void onPressed() {
       FocusScope.of(context).unfocus();
       context.read<NodeStates>().setDefault();
@@ -317,39 +329,46 @@ class _TextEntryMenuState extends State<TextEntryMenu> {
 
     return AnimatedContainer(
         duration: Duration(milliseconds: 500),
-        width: _open ? MediaQuery.of(context).size.height : 0,
+        width: _open ? MediaQuery.of(context).size.width : 0,
         height: _open ? MediaQuery.of(context).size.height : 0,
         color: Colors.brown,
-        child: Container(
-            child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            Flexible(
-              flex: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: new BorderRadius.only(
-                        topLeft: const Radius.circular(40.0),
-                        topRight: const Radius.circular(40.0),
-                        bottomLeft: const Radius.circular(40.0),
-                        bottomRight: const Radius.circular(40.0)),
-                    color: Colors.grey[400],
+        child: Center(
+          child: Container(
+              height: MediaQuery.of(context).size.height,
+              width: MediaQuery.of(context).size.width,
+              decoration: BoxDecoration(color: Colors.yellow[200]),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Flexible(
+                    flex: 4,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: new BorderRadius.only(
+                              topLeft: const Radius.circular(40.0),
+                              topRight: const Radius.circular(40.0),
+                              bottomLeft: const Radius.circular(40.0),
+                              bottomRight: const Radius.circular(40.0)),
+                          color: Colors.grey[400],
+                        ),
+                        child: TextField(
+                          maxLines: null,
+                          keyboardType: TextInputType.multiline,
+                          decoration: InputDecoration(
+                              border: InputBorder.none,
+                              hintText: 'Start here...'),
+                        ),
+                      ),
+                    ),
                   ),
-                  child: TextField(
-                    maxLines: null,
-                    decoration: InputDecoration(
-                        border: InputBorder.none, hintText: 'Start here...'),
-                  ),
-                ),
-              ),
-            ),
-            Flexible(
-                flex: 1,
-                child: MaterialButton(
-                    onPressed: onPressed, child: Icon(Icons.save)))
-          ],
-        )));
+                  Flexible(
+                      flex: 1,
+                      child: MaterialButton(
+                          onPressed: onPressed, child: Icon(Icons.save)))
+                ],
+              )),
+        ));
   }
 }

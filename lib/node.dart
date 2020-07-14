@@ -25,7 +25,7 @@ class Node {
   Offset position;
   double size;
   bool completed = false;
-
+  String text;
   Node(
       {this.colorsToChooseFrom,
       this.nodes,
@@ -66,6 +66,14 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
   void setDefault() {
     mode = Mode.def;
     notifyListeners();
+  }
+
+  void setTextOfActiveNode(String text) {
+    activeNode?.text = text;
+  }
+
+  String getTextOfActiveNode() {
+    return activeNode?.text;
   }
 
   void setModeToAddInfo(Node node) {

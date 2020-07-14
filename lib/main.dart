@@ -7,6 +7,7 @@ import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 import 'package:provider_test/edgepainter.dart';
 import 'package:provider_test/node.dart';
 import 'package:provider_test/animated_button.dart';
+import 'package:provider_test/animated_fab_button.dart';
 
 void main() {
   runApp(
@@ -180,12 +181,12 @@ class _HomeState extends State<Home> {
 
     ];
     return Scaffold(
-        drawer: Drawer(child: Container()),
-        floatingActionButton: FloatingActionButton(
-            onPressed: context.watch<NodeStates>().resetView,
-            child: Icon(Icons.refresh, color: Colors.white)),
+        floatingActionButton: AnimatedFabButton(),
+        //FloatingActionButton(
+        //    onPressed: context.watch<NodeStates>().resetView,
+        //    child: Icon(Icons.refresh, color: Colors.white)),
         appBar: AppBar(
-          title: const Text('Example'),
+          title: const Text('Tree'),
         ),
         body: Container(
           width: double.infinity,
