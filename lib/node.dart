@@ -32,6 +32,7 @@ class Node {
       this.active = false,
       this.id,
       this.position,
+      this.text = "",
       children,
       this.size = 100})
       : children = children ?? [];
@@ -57,10 +58,10 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
   Mode mode = Mode.def;
   NodeStates() {
     var parent = Node(
-      colorsToChooseFrom: Colors.green,
-      nodes: nodes,
-      position: Offset(0, 0),
-    );
+        colorsToChooseFrom: Colors.green,
+        nodes: nodes,
+        position: Offset(0, 0),
+        text: "Hello");
     nodes.add(parent);
   }
   void setDefault() {
@@ -73,7 +74,9 @@ class NodeStates with ChangeNotifier, DiagnosticableTreeMixin {
   }
 
   String getTextOfActiveNode() {
-    return activeNode?.text;
+    print("getting text");
+    print(activeNode != null ? activeNode.text : "");
+    return activeNode != null ? activeNode.text : "";
   }
 
   void setModeToAddInfo(Node node) {

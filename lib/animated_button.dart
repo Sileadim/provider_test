@@ -39,31 +39,33 @@ class NodeBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(alignment: Alignment.center, children: <Widget>[
-      shadow ? Container(
-          height: height,
-          width: width,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            border: Border.all(width: smallBorderwidth, color: Colors.brown),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.5),
-                spreadRadius: 5,
-                blurRadius: 7,
-                offset: Offset(5, 5), // changes position of shadow
-              ),
-            ],
-          )):
-            Container(
-          height: height,
-          width: width,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            border: Border.all(width: smallBorderwidth, color: Colors.brown),
-      
-          )),        
+      shadow
+          ? Container(
+              height: height,
+              width: width,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                border:
+                    Border.all(width: smallBorderwidth, color: Colors.brown),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.5),
+                    spreadRadius: 5,
+                    blurRadius: 7,
+                    offset: Offset(5, 5), // changes position of shadow
+                  ),
+                ],
+              ))
+          : Container(
+              height: height,
+              width: width,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                border:
+                    Border.all(width: smallBorderwidth, color: Colors.brown),
+              )),
       Container(
           height: height - 2 * smallBorderwidth,
           width: width - 2 * smallBorderwidth,
@@ -316,9 +318,16 @@ class TextEntryMenu extends StatefulWidget {
   _TextEntryMenuState createState() => _TextEntryMenuState();
 }
 
-double smallBorderwidth = 5;
-
 class _TextEntryMenuState extends State<TextEntryMenu> {
+  final double smallBorderwidth = 4;
+  TextEditingController _controller;
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _controller = new TextEditingController();
+  }
+
   @override
   Widget build(BuildContext context) {
     bool _open = context.watch<NodeStates>().mode == Mode.addInfo;
@@ -327,47 +336,68 @@ class _TextEntryMenuState extends State<TextEntryMenu> {
       context.read<NodeStates>().setDefault();
     }
 
+    String init = context.watch<NodeStates>().getTextOfActiveNode();
+    print("Init $init");
+
+    _controller.text = init;
+
     return AnimatedContainer(
-        duration: Duration(milliseconds: 500),
+        duration: Duration(milliseconds: 250),
         width: _open ? MediaQuery.of(context).size.width : 0,
         height: _open ? MediaQuery.of(context).size.height : 0,
         color: Colors.brown,
         child: Center(
           child: Container(
-              height: MediaQuery.of(context).size.height,
-              width: MediaQuery.of(context).size.width,
-              decoration: BoxDecoration(color: Colors.yellow[200]),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  Flexible(
-                    flex: 4,
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: new BorderRadius.only(
-                              topLeft: const Radius.circular(40.0),
-                              topRight: const Radius.circular(40.0),
-                              bottomLeft: const Radius.circular(40.0),
-                              bottomRight: const Radius.circular(40.0)),
-                          color: Colors.grey[400],
-                        ),
-                        child: TextField(
-                          maxLines: null,
-                          keyboardType: TextInputType.multiline,
-                          decoration: InputDecoration(
-                              border: InputBorder.none,
-                              hintText: 'Start here...'),
+              height: MediaQuery.of(context).size.height - smallBorderwidth * 2,
+              width: MediaQuery.of(context).size.width - smallBorderwidth * 2,
+              decoration: BoxDecoration(
+                  color: Colors.brown,
+                  border: Border.all(
+                      width: _open ? smallBorderwidth : 0,
+                      color: Colors.yellow[300])),
+              child: Center(
+                child: Container(
+                  decoration: BoxDecoration(
+                      color: Colors.blue,
+                      border: Border.all(
+                          width: _open ? smallBorderwidth : 0,
+                          color: Colors.brown)),
+                  height:
+                      MediaQuery.of(context).size.height - smallBorderwidth * 4,
+                  width:
+                      MediaQuery.of(context).size.width - smallBorderwidth * 4,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Flexible(
+                        flex: 4,
+                        child: Padding(
+                          padding: const EdgeInsets.all(15.0),
+                          child: TextFormField(
+                            controller: _controller,
+                            onChanged: (text) {
+                              print("changed text");
+                              context
+                                  .watch<NodeStates>()
+                                  .setTextOfActiveNode(text);
+                              print(context.read<NodeStates>().activeNode.text);
+                            },
+                            maxLines: 99,
+                            keyboardType: TextInputType.multiline,
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
+                            decoration: InputDecoration(
+                                fillColor: Colors.blue[100],
+                                filled: true,
+                                border: OutlineInputBorder(),
+                                hintText: null),
+                          ),
                         ),
                       ),
-                    ),
+                      Flexible(flex: 1, child: Container())
+                    ],
                   ),
-                  Flexible(
-                      flex: 1,
-                      child: MaterialButton(
-                          onPressed: onPressed, child: Icon(Icons.save)))
-                ],
+                ),
               )),
         ));
   }
