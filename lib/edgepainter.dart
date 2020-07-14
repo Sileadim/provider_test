@@ -37,9 +37,9 @@ class EdgePainter extends CustomPainter {
       Offset position = Offset(node.position.dx, node.position.dy);
     
       return Offset(
-          (position.dx) * decomposedValues.scale +
+          (position.dx +  node.size/2 ) * decomposedValues.scale +
               decomposedValues.translation.dx,
-          (position.dy) * decomposedValues.scale +
+          (position.dy+ node.size/2) * decomposedValues.scale +
               decomposedValues.translation.dy);
     }
 

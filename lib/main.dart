@@ -35,6 +35,7 @@ List<Widget> layoutElements(
     BuildContext context, Map mainButtons, Map buttons) {
   List<Widget> layedOutNodes = [];
   const double buttonSize = 70;
+  Matrix4 matrix =context.watch<NodeStates>().matrix.clone();
   final List<Map> buttonData = [
     {
       "type": ButtonType.addChild,
@@ -98,9 +99,11 @@ List<Widget> layoutElements(
       layedOutNodes
           .add(Transform(transform: mainButtonMatrix, child: mainButton));
     }
+
+    var dcv = MatrixGestureDetector.decomposeToValues(matrix);
     Matrix4 buttonMatrix = context.watch<NodeStates>().matrix.clone()
-      ..translate(node.position.dx  ,
-          node.position.dy );
+      ..translate(node.position.dx + node.size/2 -buttonSize/2  ,
+          node.position.dy + node.size/2 - buttonSize/2);
 
     if (buttons.containsKey(node)) {
       buttons[node].forEach((k, v) =>
@@ -191,7 +194,7 @@ class _HomeState extends State<Home> {
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          child: Stack( alignment: Alignment.center, children: stackChildren),
-        ));
+          child: Stack(  children: stackChildren.map((e) => Positioned(child: e)).toList() )),
+        );
   }
 }
