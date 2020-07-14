@@ -376,17 +376,16 @@ class _TextEntryMenuState extends State<TextEntryMenu> {
                           child: TextFormField(
                             controller: _controller,
                             onChanged: (text) {
-                              print("changed text");
                               context
-                                  .watch<NodeStates>()
+                                  .read<NodeStates>()
                                   .setTextOfActiveNode(text);
-                              print(context.read<NodeStates>().activeNode.text);
                             },
                             maxLines: 99,
                             keyboardType: TextInputType.multiline,
                             style: TextStyle(
                                 fontSize: 18, fontWeight: FontWeight.bold),
                             decoration: InputDecoration(
+                                
                                 fillColor: Colors.blue[100],
                                 filled: true,
                                 border: OutlineInputBorder(),
